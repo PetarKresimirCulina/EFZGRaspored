@@ -1,9 +1,11 @@
 <?php
-	function setSession()
+	header('Content-type: text/plain; charset=utf-8');
+	
+        function setSession()
 	{
 		if(!isset($_SESSION['database']))
 		{
-			$_SESSION['database'] = "u625924031_efzg";
+			$_SESSION['database'] = "efzg_raspored";
 		}
 	}
-?>
+?>	

@@ -37,7 +37,8 @@
 						$turn_part_id = $connection->real_escape_string($turn_part->attributes()->id);
 						$groups = $connection->real_escape_string($turn_part->attributes()->groups);
 						
-						if(strpos($groups, ',') !== false)
+						echo $groups . "</br>";
+						if(strpos($groups, ',') !== false && $groups != '')
 						{
 							$arr = explode(',', $groups);
 							
@@ -54,7 +55,7 @@
 								}
 							}
 						}
-						else
+						else if ($groups != '')
 						{
 							$result = $connection->query("SELECT parent_id FROM groups WHERE id=$groups");
 							$parent_id_arr = mysqli_fetch_array($result);

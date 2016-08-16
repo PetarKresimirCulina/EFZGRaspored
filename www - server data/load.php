@@ -16,7 +16,6 @@
 	include 'loadGroups.php';
 	include 'loadCourses.php';
 	include 'loadSchedules.php';
-	include 'setSession.php';
 	
 	setSession();
 	
