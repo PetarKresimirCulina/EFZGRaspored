@@ -1,0 +1,42 @@
+<resources>
+    <string name="app_name">EFZG Raspored</string>
+
+    <string name="navigation_drawer_open">Otvori navigacijski okvir</string>
+    <string name="navigation_drawer_close">Zatvori navigacijski okvir</string>
+
+    <string name="navTitle">Sveučilište u Zagrebu\n<![CDATA[<b>Ekonomski Fakultet</b>]]></string>
+    <string name="navSubTitle">EFZG Raspored Predavanja</string>
+    <string name="navURL">www.efzg.hr</string>
+
+    <string name="navCat3">Moj raspored</string>
+    <string name="navCat5">Studomat (ISVU)</string>
+    <string name="navCat7">O aplikaciji</string>
+
+    <string name="addToMySchedule">Dodaj u moj raspored</string>
+    <string name="removeFromMySchedule">Ukloni</string>
+    <string name="MySchedEmpty">Nemate dodanih stavki</string>
+
+    <string name="navCat7Detail">Ova aplikacija je izrađena u svrhu završnog rada na Ekonomskom Fakultetu u Zagrebu. Sav sadržaj je informativnog karaktera i ne garantira se točnost navedenih podataka.\n\n© 2016 Petar-Krešimir Čulina\npetar.kresimir.culina@gmail.com\n\nVerzija: </string>
+    <string name="Close">Zatvori</string>
+
+    <string name="mon">P\nO\nN</string>
+    <string name="tue">U\nT\nO</string>
+    <string name="wed">S\nR\nI</string>
+    <string name="thu">Č\nE\nT</string>
+    <string name="fri">P\nE\nT</string>
+    <string name="sat">S\nU\nB</string>
+    <string name="internet">Molimo provjerite svoje internet postavke</string>
+    <string name="internetBtn">Pokušaj ponovno</string>
+
+    <string name="tutorname_1">%1$s %2$s</string>
+    <string name="tutorname_2">%1$s %2$s %3$s</string>
+
+    <string name="schedule_type_1">PREDAVANJE - %1$S</string>
+    <string name="schedule_type_2">SEMINAR - %1$S</string>
+    <string name="schedule_week">Tjedan: %1$S</string>
+
+    <string name="legal"><u>Licence trećih strana</u></string>
+    <string name="legal1name">Volley Library - AOSP</string>
+    <string name="legal1details">Copyright © 2011 The Android Open Source Project\n\nLicensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\nhttp://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.</string>
+
+</resources>

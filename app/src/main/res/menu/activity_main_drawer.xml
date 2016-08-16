@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group
+        android:id="@+id/menu_top"
+        android:checkableBehavior="none">
+
+        <item android:title="@string/navCat3" android:orderInCategory="0" android:id="@+id/nav3" android:icon="@drawable/ic_mode_edit_24dp"/>
+    </group>
+
+    <group
+        android:id="@+id/menu_bottom"
+        android:checkableBehavior="none">
+
+        <item android:title="@string/navCat5" android:orderInCategory="998" android:id="@+id/nav5"/>
+        <item android:title="@string/navCat7" android:orderInCategory="999" android:id="@+id/nav7"/>
+    </group>
+</menu>

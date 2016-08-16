@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>#832e6b
+    <color name="colorPrimary">#832e6b</color>
+    <color name="colorPrimaryHighlight">#c645a1</color>
+    <color name="colorPrimaryDark">#61224f</color>
+    <color name="colorAccent">#ffffff</color>
+    <color name="colorAccentDark">#FFF1F1F1</color>
+
+    <color name="colorLV3">#999999</color>
+    <color name="colorLV3Dark">#7b7b7b</color>
+
+    <color name="day1">#88A825</color>
+    <color name="day2">#35203B</color>
+    <color name="day3">#911146</color>
+    <color name="day4">#CF4A30</color>
+    <color name="day5">#ED8C2B</color>
+</resources>
