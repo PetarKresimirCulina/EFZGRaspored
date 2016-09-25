@@ -31,12 +31,12 @@ public class SchedulesAdapter extends BaseAdapter {
     public SchedulesAdapter(Activity a, ArrayList d, Resources resLocal) {
 
         /********** Take passed values **********/
-        /********** Declare Used Variables */Activity activity = a;
+        /********** Declare Used Variables */
         data = d;
         res = resLocal;
 
         /***********  Layout inflator to call external xml layout () ***********/
-        inflater = (LayoutInflater) activity.
+        inflater = (LayoutInflater) a.
                 getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
     }

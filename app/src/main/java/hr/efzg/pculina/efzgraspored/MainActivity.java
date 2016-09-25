@@ -31,6 +31,7 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
@@ -45,6 +46,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -58,7 +60,7 @@ public class MainActivity extends AppCompatActivity
     public ArrayList<ListModelSchedules> CustomListViewValuesArrSchedules = new ArrayList<ListModelSchedules>();
     public int PROGRAM, YEAR, SUBLEVEL;
 
-    private String SERVER_HOST = "http://pculina.esy.es/EFZG/api/";
+    private String SERVER_HOST = "http://efzg.pkculina.com/php/api/";
     private String SERVER_PROGRAMS = SERVER_HOST + "android_fetch_data.php";
     private String SERVER_GROUPS = SERVER_HOST + "get_groups.php";
     private String SERVER_SCHEDULES = SERVER_HOST + "get_schedules.php";
@@ -124,14 +126,14 @@ public class MainActivity extends AppCompatActivity
 
         RequestQueue queue;
         StringRequest sr;
-
+        list.setAdapter(null);
 
         PROGRAM = programid;
         YEAR = year;
         SUBLEVEL = 0;
-
         if (!loadCached) {
             CustomListViewValuesArr.clear();
+            list.setAdapter(null);
         }
 
         queue = Volley.newRequestQueue(this);
@@ -222,9 +224,8 @@ public class MainActivity extends AppCompatActivity
 
             @Override
             public Map<String, String> getHeaders() throws AuthFailureError {
-                Map<String, String> params = new HashMap<String, String>();
                 //params.put("Content-Type", "application/x-www-form-urlencoded");
-                return params;
+                return new HashMap<String, String>();
             }
         };
         showLoading();
@@ -237,13 +238,13 @@ public class MainActivity extends AppCompatActivity
             hideLoading();
         }
 
-        list.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
+
 
         DrawerLayout d = (DrawerLayout) findViewById(R.id.drawer_layout);
         d.closeDrawers();
     }
 
-    public void loadMySchedule(boolean animate) {
+    public void loadMySchedule(){
         noSchedule.setVisibility(View.INVISIBLE);
         SQLiteDatabase mydatabase = openOrCreateDatabase("MyScheduleDB", MODE_PRIVATE, null);
         mydatabase.execSQL("CREATE TABLE IF NOT EXISTS Classes(" +
@@ -309,9 +310,6 @@ public class MainActivity extends AppCompatActivity
 
         if (c.getCount() > 0) {
             list.setAdapter(adapterschedules);
-            if (animate) {
-                list.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
-            }
         }
 
         if (c.getCount() == 0) {
@@ -330,24 +328,30 @@ public class MainActivity extends AppCompatActivity
             public void onResponse(String response) {
                 String sep[] = response.split("<>");
 
-                prog_id = new int[sep.length];
-                programs_id = new int[sep.length];
-                programs_name = new String[sep.length];
-                programs_years = new int[sep.length];
+                try {
+                    prog_id = new int[sep.length];
+                    programs_id = new int[sep.length];
+                    programs_name = new String[sep.length];
+                    programs_years = new int[sep.length];
 
 
-                for (int i = 0; i < sep.length; i++) {
-                    String[] sep_si = sep[i].split("&");
+                    for (int i = 0; i < sep.length; i++) {
+                        String[] sep_si = sep[i].split("&");
 
-                    prog_id[i] = i;
-                    Log.d("Response", sep_si[0]);
-                    sep_si[0] = sep_si [0].trim();
-                    programs_id[i] = Integer.parseInt(sep_si[0]);
-                    programs_name[i] = sep_si[1];
-                    programs_years[i] = Integer.parseInt(sep_si[2]);
+                        prog_id[i] = i;
+                        Log.d("Response", sep_si[0]);
+                        sep_si[0] = sep_si [0].trim();
+                        programs_id[i] = Integer.parseInt(sep_si[0]);
+                        programs_name[i] = sep_si[1];
+                        programs_years[i] = Integer.parseInt(sep_si[2]);
 
-                    createSubMenus(prog_id[i], programs_id[i], programs_name[i], programs_years[i]);
+                        createSubMenus(prog_id[i], programs_id[i], programs_name[i], programs_years[i]);
+                    }
                 }
+                catch (Exception e){
+                    Toast.makeText(MainActivity.this, "Dogodila se greška!\n" + e.toString(), Toast.LENGTH_LONG).show();
+                }
+
                 hideLoading();
             }
         }, new Response.ErrorListener() {
@@ -382,14 +386,13 @@ public class MainActivity extends AppCompatActivity
 
             @Override
             public Map<String, String> getHeaders() throws AuthFailureError {
-                Map<String, String> params = new HashMap<String, String>();
                 //params.put("Content-Type", "application/x-www-form-urlencoded");
-                return params;
+                return new HashMap<String, String>();
             }
         };
         showLoading();
         queue.add(sr);
-        loadMySchedule(true);
+        loadMySchedule();
     }
 
     public void createSubMenus(int id, int prog_id, final String name, int years) {
@@ -412,7 +415,7 @@ public class MainActivity extends AppCompatActivity
 
                     @Override
                     public boolean onMenuItemClick(MenuItem item) {
-                        setTitle(name + " > " + item.getTitle());
+                        setTitle(item.getTitle());
                         noSchedule.setVisibility(View.INVISIBLE);
                         getGroups(prog, i2, false);
                         list.setVisibility(View.VISIBLE);
@@ -429,7 +432,7 @@ public class MainActivity extends AppCompatActivity
 
                     @Override
                     public boolean onMenuItemClick(MenuItem item) {
-                        setTitle(name + " > " + item.getTitle());
+                        setTitle(item.getTitle());
                         noSchedule.setVisibility(View.INVISIBLE);
                         getGroups(prog, i2, false);
                         list.setVisibility(View.VISIBLE);
@@ -446,7 +449,7 @@ public class MainActivity extends AppCompatActivity
 
                     @Override
                     public boolean onMenuItemClick(MenuItem item) {
-                        setTitle(name + " > " + item.getTitle());
+                        setTitle(item.getTitle());
                         noSchedule.setVisibility(View.INVISIBLE);
                         getGroups(prog, i2, false);
                         list.setVisibility(View.VISIBLE);
@@ -536,12 +539,8 @@ public class MainActivity extends AppCompatActivity
             ISVU.loadUrl("https://www.isvu.hr/studomat/prijava");
             setTitle(R.string.navCat5);
         } else if (id == R.id.nav3) {
-            loadMySchedule(true);
+            loadMySchedule();
         }
-
-
-        Log.d("Title", String.valueOf(item.getTitle()));
-        setTitle(item.getTitle());
 
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -570,8 +569,6 @@ public class MainActivity extends AppCompatActivity
         switch (item.getItemId()) {
             case R.id.myScheduleCMI:
                 ListModelSchedules a = CustomListViewValuesArrSchedules.get(info.position);
-                String item1 = a.getTutorName();
-                Log.d("item1", item1.toString());
 
                 int day, units_in_day, duration, room_id, group_id, execution_type;
                 String period, course_name, tutor_name, tutor_surname, tutor_code, room_name;
@@ -628,38 +625,15 @@ public class MainActivity extends AppCompatActivity
                 // class_details
                 // weeks
 
-
+                Toast.makeText(MainActivity.this, R.string.addToMyScheduleSuccess, Toast.LENGTH_SHORT).show();
                 return true;
             case R.id.myScheduleCMIRemove:
                 SQLiteDatabase db = openOrCreateDatabase("MyScheduleDB", MODE_PRIVATE, null);
                 ListModelSchedules b = CustomListViewValuesArrSchedules.get(info.position);
                 db.delete("Classes", "day" + "=" + b.getDay() + " and " + "units_in_day" + "=" + String.valueOf(b.getUnitsInDay()) + " and " + "course_name" + "='" + b.getCourseName() + "'", null);
 
-                Animation anim = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fade_out);
-
-                final int pos = info.position;
-
-                anim.setAnimationListener(new Animation.AnimationListener() {
-
-                    @Override
-                    public void onAnimationStart(Animation animation) {
-                    }
-
-                    @Override
-                    public void onAnimationRepeat(Animation animation) {
-                    }
-
-                    @Override
-                    public void onAnimationEnd(Animation animation) {
-                        list.getChildAt(pos).setVisibility(View.INVISIBLE);
-                        list.post(new Runnable() {
-                            public void run() {
-                                loadMySchedule(false);
-                            }
-                        });
-                    }
-                });
-                list.getChildAt(info.position).startAnimation(anim);
+                loadMySchedule();
+                Toast.makeText(MainActivity.this, R.string.removeFromMyScheduleSuccess, Toast.LENGTH_SHORT).show();
                 return true;
             default:
                 return super.onContextItemSelected(item);
@@ -668,33 +642,10 @@ public class MainActivity extends AppCompatActivity
 
     public void showLoading() {
         loading.setVisibility(View.VISIBLE);
-
-        Animation anim = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fade_in);
-        anim.setDuration(250);
-        loading.startAnimation(anim);
     }
 
     public void hideLoading() {
-        Animation anim = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fade_out);
-        anim.setDuration(250);
-
-        anim.setAnimationListener(new Animation.AnimationListener() {
-
-            @Override
-            public void onAnimationStart(Animation animation) {
-            }
-
-            @Override
-            public void onAnimationRepeat(Animation animation) {
-            }
-
-            @Override
-            public void onAnimationEnd(Animation animation) {
-                loading.setVisibility(View.INVISIBLE);
-            }
-        });
-
-        loading.startAnimation(anim);
+        loading.setVisibility(View.INVISIBLE);
     }
 
     public void loadGroupSchedule(final int gid) {
@@ -733,7 +684,7 @@ public class MainActivity extends AppCompatActivity
 
                         String[] sep_si = sep[i].split("&");
 
-                        if (sep_si[0] != "" && sep_si[0].length() > 0)   // greška prilikom dohvata, php echo iz nekog razloga dodaje
+                        if (!Objects.equals(sep_si[0], "") && sep_si[0].length() > 0)   // greška prilikom dohvata, php echo iz nekog razloga dodaje
                         //prazna polja/znakove
                         {
                             sep_si[0] = sep_si[0].trim();
@@ -798,7 +749,6 @@ public class MainActivity extends AppCompatActivity
                     adapterschedules = new SchedulesAdapter(CustomListView, CustomListViewValuesArrSchedules, res);
                     list.setAdapter(adapterschedules);
                     hideLoading();
-                    list.startAnimation(AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fade_in));
                 } else {
                     list.setAdapter(null);
                     hideLoading();
@@ -836,9 +786,8 @@ public class MainActivity extends AppCompatActivity
 
             @Override
             public Map<String, String> getHeaders() throws AuthFailureError {
-                Map<String, String> params = new HashMap<String, String>();
                 //params.put("Content-Type", "application/x-www-form-urlencoded");
-                return params;
+                return new HashMap<String, String>();
             }
         };
         showLoading();

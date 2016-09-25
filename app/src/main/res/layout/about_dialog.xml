@@ -20,7 +20,7 @@
         android:cropToPadding="true"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="10dp"
-        android:contentDescription="Hatching chick" />
+        android:contentDescription="@string/none" />
 
     <TextView
         android:layout_width="wrap_content"

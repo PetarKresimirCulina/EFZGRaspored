@@ -11,10 +11,15 @@
     <string name="navCat3">Moj raspored</string>
     <string name="navCat5">Studomat (ISVU)</string>
     <string name="navCat7">O aplikaciji</string>
+    <string name="hatchingchick">Hatching chick</string>
+    <string name="none">none</string>
+    <string name="facultylogo">Faculty logo</string>
 
     <string name="addToMySchedule">Dodaj u moj raspored</string>
+    <string name="addToMyScheduleSuccess">Kolegij dodan u raspored</string>
     <string name="removeFromMySchedule">Ukloni</string>
-    <string name="MySchedEmpty">Nemate dodanih stavki</string>
+    <string name="removeFromMyScheduleSuccess">Kolegij uklonjen iz rasporeda</string>
+    <string name="MySchedEmpty">Nemate dodanih kolegija\n\nDugo kliknite na kolegij kako biste ga dodali u raspored</string>
 
     <string name="navCat7Detail">Ova aplikacija je izrađena u svrhu završnog rada na Ekonomskom Fakultetu u Zagrebu. Sav sadržaj je informativnog karaktera i ne garantira se točnost navedenih podataka.\n\n© 2016 Petar-Krešimir Čulina\npetar.kresimir.culina@gmail.com\n\nVerzija: </string>
     <string name="Close">Zatvori</string>

@@ -54,11 +54,12 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textAppearance="@android:style/TextAppearance.Material.Medium"
             android:text="@string/MySchedEmpty"
             android:id="@+id/emptyNotify"
-            android:textSize="20sp"
-            android:layout_centerInParent="true" />
+            android:layout_centerInParent="true"
+            android:padding="10dp"
+            android:textAlignment="center" />
     </RelativeLayout>
 
     <ListView
