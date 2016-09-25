@@ -5,7 +5,7 @@
 	{
 		if(!isset($_SESSION['database']))
 		{
-			$_SESSION['database'] = "efzg_raspored";
+			$_SESSION['database'] = "some_database_name";
 		}
 	}
 ?>	
