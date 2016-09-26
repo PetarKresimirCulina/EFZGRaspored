@@ -2,9 +2,11 @@ package hr.efzg.pculina.efzgraspored;
 
 import android.app.Dialog;
 import android.app.LauncherActivity;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -520,6 +522,25 @@ public class MainActivity extends AppCompatActivity
                         }
                     });
                     dialog.show();
+                }
+            });
+
+            TextView clientLink = (TextView)findViewById(R.id.clientLink);
+            TextView devLink = (TextView) findViewById(R.id.devLink);
+
+            clientLink.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.efzg.hr"));
+                    startActivity(browserIntent);
+                }
+            });
+
+            devLink.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.pkculina.com"));
+                    startActivity(browserIntent);
                 }
             });
 
