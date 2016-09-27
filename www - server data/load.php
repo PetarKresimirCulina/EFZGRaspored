@@ -35,7 +35,6 @@
 	$xml = simplexml_load_file($tmpFile);
 	echo "\n\r" . 'XML File loaded: ' . tmpFile();
 	
-	var_dump($xml);
 	
 	$connection = connectDB();
 	
