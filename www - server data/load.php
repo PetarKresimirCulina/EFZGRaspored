@@ -25,7 +25,6 @@
 	$start = time();
 
 	$tmpFile = $_SESSION["xmlfile"];
-	print_r($tmpFile);
 	
 	if(empty($tmpFile))
 	{
