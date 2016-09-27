@@ -525,8 +525,8 @@ public class MainActivity extends AppCompatActivity
                 }
             });
 
-            TextView clientLink = (TextView)findViewById(R.id.clientLink);
-            TextView devLink = (TextView) findViewById(R.id.devLink);
+            TextView clientLink = (TextView)dialog.findViewById(R.id.clientLink);
+            TextView devLink = (TextView) dialog.findViewById(R.id.devLink);
 
             clientLink.setOnClickListener(new View.OnClickListener() {
                 @Override
