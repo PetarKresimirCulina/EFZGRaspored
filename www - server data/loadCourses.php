@@ -37,7 +37,7 @@
 						$turn_part_id = $connection->real_escape_string($turn_part->attributes()->id);
 						$groups = $connection->real_escape_string($turn_part->attributes()->groups);
 						
-						echo $groups . "</br>";
+						//echo $groups . "</br>";
 						if(strpos($groups, ',') !== false && $groups != '')
 						{
 							$arr = explode(',', $groups);

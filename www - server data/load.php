@@ -1,10 +1,14 @@
 <?php
+	session_start();
 	header('Content-type: text/plain; charset=utf-8');
 	/* 	
 		Program za učitavanje Wise Timetable XML datoteka u MySQL bazu podataka
 		Copyright (c) 2016 Petar-Krešimir Čulina
 		Verzija 1.0 - 26/02/2016
 	*/
+	
+	
+	
 	include'connection_db.php';
 	include 'loadTimeSlots.php';
 	include 'loadRoomProperties.php';
@@ -17,13 +21,22 @@
 	include 'loadCourses.php';
 	include 'loadSchedules.php';
 	
-	setSession();
 	
 	$start = time();
+
+	$tmpFile = $_SESSION["xmlfile"];
+	print_r($tmpFile);
+	
+	if(empty($tmpFile))
+	{
+		die ("XML datoteka je prazna.");
+	}
 	
 	echo "\n\r" . 'Loading XML file...';
-	$xml = simplexml_load_file('raspored.xml');
-	echo "\n\r" . 'XML File loaded: raspored.xml';
+	$xml = simplexml_load_file($tmpFile);
+	echo "\n\r" . 'XML File loaded: ' . tmpFile();
+	
+	var_dump($xml);
 	
 	$connection = connectDB();
 	
