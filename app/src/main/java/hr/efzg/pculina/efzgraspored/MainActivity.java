@@ -1,17 +1,28 @@
 package hr.efzg.pculina.efzgraspored;
 
+import android.Manifest;
 import android.app.Dialog;
 import android.app.LauncherActivity;
+import android.content.ContentResolver;
+import android.content.ContentValues;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.CalendarContract;
+import android.provider.CalendarContract.Calendars;
+import android.provider.CalendarContract.Events;
 import android.support.design.widget.NavigationView;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.GravityCompat;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.Html;
@@ -44,11 +55,13 @@ import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TimeZone;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -83,6 +96,8 @@ public class MainActivity extends AppCompatActivity
     WebView ISVU;
     RelativeLayout noInternet;
     RelativeLayout noSchedule;
+    boolean showSync = true;
+    MenuItem addCalendar = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -121,6 +136,24 @@ public class MainActivity extends AppCompatActivity
         list.setDivider(null);
         loadMenuItems();
         registerForContextMenu(list);
+        showSyncMenuItem(true);
+    }
+
+    public void showSyncMenuItem(boolean val) {
+        showSync = val;
+        supportInvalidateOptionsMenu();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        if (showSync) {
+            addCalendar = menu.add(Menu.NONE, 9999, Menu.NONE, R.string.addToCalendar).setIcon(R.drawable.ic_menu_calendar_white);
+            addCalendar.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+        } else if (!showSync && addCalendar != null) {
+            menu.removeItem(addCalendar.getItemId());
+            addCalendar = null;
+        }
+        return true;
     }
 
     private void getGroups(final int programid, final int year, final boolean loadCached) {
@@ -241,12 +274,11 @@ public class MainActivity extends AppCompatActivity
         }
 
 
-
         DrawerLayout d = (DrawerLayout) findViewById(R.id.drawer_layout);
         d.closeDrawers();
     }
 
-    public void loadMySchedule(){
+    public void loadMySchedule() {
         noSchedule.setVisibility(View.INVISIBLE);
         SQLiteDatabase mydatabase = openOrCreateDatabase("MyScheduleDB", MODE_PRIVATE, null);
         mydatabase.execSQL("CREATE TABLE IF NOT EXISTS Classes(" +
@@ -342,15 +374,14 @@ public class MainActivity extends AppCompatActivity
 
                         prog_id[i] = i;
                         Log.d("Response", sep_si[0]);
-                        sep_si[0] = sep_si [0].trim();
+                        sep_si[0] = sep_si[0].trim();
                         programs_id[i] = Integer.parseInt(sep_si[0]);
                         programs_name[i] = sep_si[1];
                         programs_years[i] = Integer.parseInt(sep_si[2]);
 
                         createSubMenus(prog_id[i], programs_id[i], programs_name[i], programs_years[i]);
                     }
-                }
-                catch (Exception e){
+                } catch (Exception e) {
                     Toast.makeText(MainActivity.this, "Dogodila se greška!\n" + e.toString(), Toast.LENGTH_LONG).show();
                 }
 
@@ -401,13 +432,13 @@ public class MainActivity extends AppCompatActivity
         NavigationView nav = (NavigationView) findViewById(R.id.nav_view);
         Menu m = nav.getMenu();
 
-        SubMenu mi;
+        SubMenu mi; // PRVO DODAJ GLAVE PODIZBORNIKE
         if (name.toLowerCase().contains("izborni")) {
             mi = m.addSubMenu(prog_id, id, 99, name);
         } else {
             mi = m.addSubMenu(name);
         }
-
+        // DODAJ VRIJEDNOSTI PODIZBORNICIMA
         for (int i = 1; i <= years; i++) {
             if (!name.toLowerCase().contains("izborni") && !name.toLowerCase().contains("diplomski") && !name.toLowerCase().contains("stručni")) // fix za izborne PE i diplomski TE JE STRUČNI IZBAČEN
             {
@@ -418,6 +449,7 @@ public class MainActivity extends AppCompatActivity
                     @Override
                     public boolean onMenuItemClick(MenuItem item) {
                         setTitle(item.getTitle());
+                        showSyncMenuItem(false);
                         noSchedule.setVisibility(View.INVISIBLE);
                         getGroups(prog, i2, false);
                         list.setVisibility(View.VISIBLE);
@@ -435,6 +467,7 @@ public class MainActivity extends AppCompatActivity
                     @Override
                     public boolean onMenuItemClick(MenuItem item) {
                         setTitle(item.getTitle());
+                        showSyncMenuItem(false);
                         noSchedule.setVisibility(View.INVISIBLE);
                         getGroups(prog, i2, false);
                         list.setVisibility(View.VISIBLE);
@@ -452,6 +485,7 @@ public class MainActivity extends AppCompatActivity
                     @Override
                     public boolean onMenuItemClick(MenuItem item) {
                         setTitle(item.getTitle());
+                        showSyncMenuItem(false);
                         noSchedule.setVisibility(View.INVISIBLE);
                         getGroups(prog, i2, false);
                         list.setVisibility(View.VISIBLE);
@@ -479,6 +513,33 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        super.onOptionsItemSelected(item);
+
+        if (item.getItemId() == addCalendar.getItemId()) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle(R.string.addToCalendarTitle);
+            builder.setMessage(R.string.addToCalendarQuestion);
+            builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    pushToCalendar();
+                    dialog.dismiss();
+                }
+            });
+            builder.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    //TODO
+                    dialog.dismiss();
+                }
+            });
+            AlertDialog dialog = builder.create();
+            dialog.show();
+
+        }
+        return false;
+    }
+
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
@@ -486,7 +547,6 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav7) {
-
             final Dialog dialog = new Dialog(this);
             dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
             dialog.setContentView(R.layout.about_dialog);
@@ -525,7 +585,7 @@ public class MainActivity extends AppCompatActivity
                 }
             });
 
-            TextView clientLink = (TextView)dialog.findViewById(R.id.clientLink);
+            TextView clientLink = (TextView) dialog.findViewById(R.id.clientLink);
             TextView devLink = (TextView) dialog.findViewById(R.id.devLink);
 
             clientLink.setOnClickListener(new View.OnClickListener() {
@@ -546,6 +606,7 @@ public class MainActivity extends AppCompatActivity
 
             dialog.show();
         } else if (id == R.id.nav5) {
+            showSyncMenuItem(false);
             showLoading();
             list.setVisibility(View.INVISIBLE);
             ISVU.setVisibility(View.VISIBLE);
@@ -560,9 +621,9 @@ public class MainActivity extends AppCompatActivity
             ISVU.loadUrl("https://www.isvu.hr/studomat/prijava");
             setTitle(R.string.navCat5);
         } else if (id == R.id.nav3) {
+            showSyncMenuItem(true);
             loadMySchedule();
         }
-
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
@@ -813,5 +874,176 @@ public class MainActivity extends AppCompatActivity
         };
         showLoading();
         queue.add(sr);
+    }
+
+    private void pushToCalendar()
+    {
+        SQLiteDatabase mydatabase = openOrCreateDatabase("MyScheduleDB", MODE_PRIVATE, null);
+        mydatabase.execSQL("CREATE TABLE IF NOT EXISTS Classes(" +
+                "id INTEGER primary key AUTOINCREMENT," +
+                "day INTEGER," +
+                "units_in_day INTEGER," +
+                "duration INTEGER," +
+                "room_id INTEGER," +
+                "group_id INTEGER," +
+                "execution_type INTEGER," +
+                "period VARCHAR," +
+                "course_name VARCHAR," +
+                "tutor_name VARCHAR," +
+                "tutor_surname VARCHAR," +
+                "tutor_code VARCHAR," +
+                "room_name VARCHAR" +
+                ")");
+
+        String selectQuery = "SELECT * FROM Classes";
+        Cursor c = mydatabase.rawQuery(selectQuery, null);
+
+        if(c != null && c.getCount()>0)
+        {
+            while (c.moveToNext()) {
+                Log.d("COURSE NAME", c.getString(c.getColumnIndex("course_name")));
+                final ListModelSchedules sched = new ListModelSchedules();
+
+                int setDay = c.getInt(c.getColumnIndex("day"));
+
+                int setStartTime = c.getInt(c.getColumnIndex("units_in_day"));
+                int setEndTime = c.getInt(c.getColumnIndex("duration"));
+                String room = c.getString(c.getColumnIndex("room_name")) + " - Ekonomski fakultet Zagreb\n" +
+                        "Trg Johna Kennedyja 6, 10000, Zagreb, Croatia";
+                String title = c.getString(c.getColumnIndex("course_name"));
+                String desc;
+
+                switch (c.getInt(c.getColumnIndex("execution_type"))) {
+                    case 1:
+                        desc = "Predavanje";
+                        break;
+                    case 3:
+                        desc = "Predavanje";
+                        break;
+                    default:
+                        desc = "Seminar";
+                        break;
+                }
+
+
+                switch (setDay) {
+                    case 0:
+                        setDay = Calendar.MONDAY;
+                        break;
+                    case 1:
+                        setDay = Calendar.TUESDAY;
+                        break;
+                    case 2:
+                        setDay = Calendar.WEDNESDAY;
+                        break;
+                    case 3:
+                        setDay = Calendar.THURSDAY;
+                        break;
+                    case 4:
+                        setDay = Calendar.FRIDAY;
+                        break;
+                    case 5:
+                        setDay = Calendar.SATURDAY;
+                        break;
+                    case 6:
+                        setDay = Calendar.SUNDAY;
+                        break;
+                }
+
+                setStartTime = (int) (setStartTime * 0.5);
+                setStartTime = 7 + setStartTime; // npr 17
+
+                setEndTime = (int) (setEndTime * 0.5); // npr 2
+                setEndTime = setStartTime + setEndTime; // npr 17 + 2 = 19 traje do 19 sati
+
+                if (setDay != 0 && title != null && desc != null && room != null && setStartTime != 0 && setEndTime != 0)
+                {
+                    addToCalendar(setDay, title, desc, room, setStartTime, 0, setEndTime, 0);
+                }
+            }
+            Toast.makeText(this, R.string.addToCalendarSuccess, Toast.LENGTH_LONG).show();
+        }
+        else
+        {
+            Toast.makeText(this, R.string.addToCalendarEmpty, Toast.LENGTH_LONG).show();
+        }
+        c.close();
+    }
+
+    private void addToCalendar(int DAY_WEEK, String TITLE, String DESC, String LOC, int hour_s, int min_s, int hour_e, int min_e)
+    {
+
+        Uri uri = CalendarContract.Calendars.CONTENT_URI;
+        String[] projection = new String[]{
+                CalendarContract.Calendars._ID,
+                CalendarContract.Calendars.ACCOUNT_NAME,
+                CalendarContract.Calendars.CALENDAR_DISPLAY_NAME,
+                CalendarContract.Calendars.NAME,
+                CalendarContract.Calendars.CALENDAR_COLOR
+        };
+
+        // Construct event details
+        long startMillis = 0;
+        long endMillis = 0;
+        int year = Calendar.getInstance().get(Calendar.YEAR);
+        int month = Calendar.getInstance().get(Calendar.MONTH);
+
+        Calendar now = Calendar.getInstance();
+
+        int day = now.get(Calendar.DAY_OF_WEEK);
+        int daym = now.get(Calendar.DAY_OF_MONTH);
+        int start_day = 0;
+
+        if (day != DAY_WEEK) {
+            start_day = daym - (day - DAY_WEEK);
+            //Toast.makeText(this, Integer.toString(start_day), Toast.LENGTH_LONG).show();
+        } else {
+            start_day = daym;
+        }
+
+
+        Calendar beginTime = Calendar.getInstance();
+        beginTime.set(year, month, start_day, hour_s, min_s);
+        startMillis = beginTime.getTimeInMillis();
+        Calendar endTime = Calendar.getInstance();
+        endTime.set(year, month, start_day, hour_e, min_e);
+        endMillis = endTime.getTimeInMillis();
+
+
+        // Insert Event
+        ContentResolver cr = getContentResolver();
+        ContentValues values = new ContentValues();
+        TimeZone timeZone = TimeZone.getDefault();
+        values.put(CalendarContract.Events.DTSTART, startMillis);
+        values.put(CalendarContract.Events.DTEND, endMillis);
+        values.put(CalendarContract.Events.EVENT_TIMEZONE, timeZone.getID());
+
+        values.put(Events.RRULE, "FREQ=WEEKLY;");
+        values.put(Events.HAS_ALARM, 1);
+
+        values.put(CalendarContract.Events.TITLE, TITLE);
+        values.put(CalendarContract.Events.DESCRIPTION, DESC);
+        values.put(Events.EVENT_LOCATION, LOC);
+        values.put(CalendarContract.Events.CALENDAR_ID, 1);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_CALENDAR}, 101);
+
+        }
+
+        uri = cr.insert(CalendarContract.Events.CONTENT_URI, values);
+
+        // Retrieve ID for new event
+        String eventID = uri.getLastPathSegment();
+
+
+
+        ContentValues reminders = new ContentValues();
+        reminders.put(CalendarContract.Reminders.EVENT_ID, eventID);
+        reminders.put(CalendarContract.Reminders.METHOD, CalendarContract.Reminders.METHOD_ALERT);
+        reminders.put(CalendarContract.Reminders.MINUTES, 15);
+
+        Uri uri2 = cr.insert(CalendarContract.Reminders.CONTENT_URI, reminders);
+
     }
 }

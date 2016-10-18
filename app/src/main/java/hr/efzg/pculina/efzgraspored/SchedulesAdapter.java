@@ -174,11 +174,11 @@ public class SchedulesAdapter extends BaseAdapter {
             holder.time_to.setText(tt);
             holder.course.setText(tempValues.getCourseName());
 
-            if (tempValues.getTutorCode().equals("none")) {
+            //if (tempValues.getTutorCode().equals("none")) {
                 holder.tutor.setText(parent.getContext().getString(R.string.tutorname_1, tempValues.getTutorName(), tempValues.getTutorSurname()));
-            } else {
+            /*} else {
                 holder.tutor.setText(parent.getContext().getString(R.string.tutorname_2, tempValues.getTutorCode(), tempValues.getTutorName(), tempValues.getTutorSurname()));
-            }
+            }*/
 
             if (tempValues.getExecutionType() == 1 || tempValues.getExecutionType() == 3) {
                 holder.course_room_details.setText(parent.getContext().getString(R.string.schedule_type_1, tempValues.getRoomName()));

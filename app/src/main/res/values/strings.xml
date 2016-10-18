@@ -11,7 +11,6 @@
     <string name="navCat3">Moj raspored</string>
     <string name="navCat5">Studomat (ISVU)</string>
     <string name="navCat7">O aplikaciji</string>
-    <string name="hatchingchick">Hatching chick</string>
     <string name="none">none</string>
     <string name="facultylogo">Faculty logo</string>
 
@@ -34,7 +33,6 @@
     <string name="internetBtn">Pokušaj ponovno</string>
 
     <string name="tutorname_1">%1$s %2$s</string>
-    <string name="tutorname_2">%1$s %2$s %3$s</string>
 
     <string name="schedule_type_1">PREDAVANJE - %1$S</string>
     <string name="schedule_type_2">SEMINAR - %1$S</string>
@@ -47,4 +45,12 @@
     <string name="legal1name">Volley Library - AOSP</string>
     <string name="legal1details">Copyright © 2011 The Android Open Source Project\n\nLicensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\nhttp://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.</string>
 
+    <string name="addToCalendar">Dodaj u moj kalendar</string>
+    <string name="addToCalendarSuccess">Uspješno ste dodali svoj raspored u svoju kalendar aplikaciju</string>
+    <string name="addToCalendarEmpty">Vaš raspored je trunutno prazan</string>
+
+    <string name="addToCalendarTitle">Dodaj u kalendar</string>
+    <string name="addToCalendarQuestion">Jesti li sigurni da želite dodati svoj raspored u kalendar na svojem uređaju?</string>
+    <string name="yes">Da</string>
+    <string name="no">Ne</string>
 </resources>

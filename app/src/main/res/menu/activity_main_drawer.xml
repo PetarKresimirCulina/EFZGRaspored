@@ -1,11 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <group
-        android:id="@+id/menu_top"
-        android:checkableBehavior="none">
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
-        <item android:title="@string/navCat3" android:orderInCategory="0" android:id="@+id/nav3" android:icon="@drawable/ic_mode_edit_24dp"/>
-    </group>
 
     <group
         android:id="@+id/menu_bottom"
@@ -14,4 +10,13 @@
         <item android:title="@string/navCat5" android:orderInCategory="998" android:id="@+id/nav5"/>
         <item android:title="@string/navCat7" android:orderInCategory="999" android:id="@+id/nav7"/>
     </group>
+
+    <group
+        android:id="@+id/menu_top"
+        android:checkableBehavior="none"
+        android:orderInCategory="1000">
+
+        <item android:title="@string/navCat3" android:orderInCategory="0" android:id="@+id/nav3" android:icon="@drawable/ic_mode_edit_24dp"/>
+    </group>
+
 </menu>
