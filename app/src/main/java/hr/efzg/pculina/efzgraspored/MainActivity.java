@@ -11,15 +11,17 @@ import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.PorterDuff;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.CalendarContract;
 import android.provider.CalendarContract.Calendars;
 import android.provider.CalendarContract.Events;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
-import android.support.v4.view.MenuItemCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
@@ -34,8 +36,6 @@ import android.view.MenuItem;
 import android.view.SubMenu;
 import android.view.View;
 import android.view.Window;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.AdapterView;
@@ -53,7 +53,11 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.gms.appindexing.AppIndex;
+import com.google.android.gms.common.api.GoogleApiClient;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -99,6 +103,13 @@ public class MainActivity extends AppCompatActivity
     boolean showSync = true;
     MenuItem addCalendar = null;
 
+    static final int MY_PERMISSIONS_REQUEST_WRITE_CALENDAR = 0;
+    /**
+     * ATTENTION: This was auto-generated to implement the App Indexing API.
+     * See https://g.co/AppIndexing/AndroidStudio for more information.
+     */
+    private GoogleApiClient client;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -124,7 +135,7 @@ public class MainActivity extends AppCompatActivity
         loading = (ProgressBar) findViewById(R.id.progressBarLoading);
         loading.getIndeterminateDrawable().setColorFilter(
                 getResources().getColor(R.color.colorLV3),
-                android.graphics.PorterDuff.Mode.SRC_IN);
+                PorterDuff.Mode.SRC_IN);
 
         ISVU = (WebView) findViewById(R.id.isvuWeb);
         ISVU.setVisibility(View.INVISIBLE);
@@ -137,6 +148,9 @@ public class MainActivity extends AppCompatActivity
         loadMenuItems();
         registerForContextMenu(list);
         showSyncMenuItem(true);
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
     }
 
     public void showSyncMenuItem(boolean val) {
@@ -307,7 +321,6 @@ public class MainActivity extends AppCompatActivity
         list.setAdapter(null);
 
         while (c.moveToNext()) {
-            Log.d("COURSE NAME", c.getString(c.getColumnIndex("course_name")));
             final ListModelSchedules sched = new ListModelSchedules();
 
             sched.setDay(c.getInt(c.getColumnIndex("day")));
@@ -373,7 +386,6 @@ public class MainActivity extends AppCompatActivity
                         String[] sep_si = sep[i].split("&");
 
                         prog_id[i] = i;
-                        Log.d("Response", sep_si[0]);
                         sep_si[0] = sep_si[0].trim();
                         programs_id[i] = Integer.parseInt(sep_si[0]);
                         programs_name[i] = sep_si[1];
@@ -876,110 +888,161 @@ public class MainActivity extends AppCompatActivity
         queue.add(sr);
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case 1: {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    pushToCalendar();
+                } else {
+                    Toast.makeText(MainActivity.this, "Morate dozvoliti zapis u kalendar kako bi ova funkcionalnost bila omogućena", Toast.LENGTH_LONG).show();
+                }
+                return;
+            }
+        }
+    }
+
     private void pushToCalendar()
     {
-        SQLiteDatabase mydatabase = openOrCreateDatabase("MyScheduleDB", MODE_PRIVATE, null);
-        mydatabase.execSQL("CREATE TABLE IF NOT EXISTS Classes(" +
-                "id INTEGER primary key AUTOINCREMENT," +
-                "day INTEGER," +
-                "units_in_day INTEGER," +
-                "duration INTEGER," +
-                "room_id INTEGER," +
-                "group_id INTEGER," +
-                "execution_type INTEGER," +
-                "period VARCHAR," +
-                "course_name VARCHAR," +
-                "tutor_name VARCHAR," +
-                "tutor_surname VARCHAR," +
-                "tutor_code VARCHAR," +
-                "room_name VARCHAR" +
-                ")");
-
-        String selectQuery = "SELECT * FROM Classes";
-        Cursor c = mydatabase.rawQuery(selectQuery, null);
-
-        if(c != null && c.getCount()>0)
+        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED)
         {
-            while (c.moveToNext()) {
-                Log.d("COURSE NAME", c.getString(c.getColumnIndex("course_name")));
-                final ListModelSchedules sched = new ListModelSchedules();
-
-                int setDay = c.getInt(c.getColumnIndex("day"));
-
-                int setStartTime = c.getInt(c.getColumnIndex("units_in_day"));
-                int setEndTime = c.getInt(c.getColumnIndex("duration"));
-                String room = c.getString(c.getColumnIndex("room_name")) + " - Ekonomski fakultet Zagreb\n" +
-                        "Trg Johna Kennedyja 6, 10000, Zagreb, Croatia";
-                String title = c.getString(c.getColumnIndex("course_name"));
-                String desc;
-
-                switch (c.getInt(c.getColumnIndex("execution_type"))) {
-                    case 1:
-                        desc = "Predavanje";
-                        break;
-                    case 3:
-                        desc = "Predavanje";
-                        break;
-                    default:
-                        desc = "Seminar";
-                        break;
-                }
-
-
-                switch (setDay) {
-                    case 0:
-                        setDay = Calendar.MONDAY;
-                        break;
-                    case 1:
-                        setDay = Calendar.TUESDAY;
-                        break;
-                    case 2:
-                        setDay = Calendar.WEDNESDAY;
-                        break;
-                    case 3:
-                        setDay = Calendar.THURSDAY;
-                        break;
-                    case 4:
-                        setDay = Calendar.FRIDAY;
-                        break;
-                    case 5:
-                        setDay = Calendar.SATURDAY;
-                        break;
-                    case 6:
-                        setDay = Calendar.SUNDAY;
-                        break;
-                }
-
-                setStartTime = (int) (setStartTime * 0.5);
-                setStartTime = 7 + setStartTime; // npr 17
-
-                setEndTime = (int) (setEndTime * 0.5); // npr 2
-                setEndTime = setStartTime + setEndTime; // npr 17 + 2 = 19 traje do 19 sati
-
-                if (setDay != 0 && title != null && desc != null && room != null && setStartTime != 0 && setEndTime != 0)
-                {
-                    addToCalendar(setDay, title, desc, room, setStartTime, 0, setEndTime, 0);
-                }
-            }
-            Toast.makeText(this, R.string.addToCalendarSuccess, Toast.LENGTH_LONG).show();
+            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_CALENDAR}, 1);
         }
         else
         {
-            Toast.makeText(this, R.string.addToCalendarEmpty, Toast.LENGTH_LONG).show();
+            AsyncTask.execute(new Runnable() {
+                @Override
+                public void run() {
+                    SQLiteDatabase mydatabase = openOrCreateDatabase("MyScheduleDB", MODE_PRIVATE, null);
+                    mydatabase.execSQL("CREATE TABLE IF NOT EXISTS Classes(" +
+                            "id INTEGER primary key AUTOINCREMENT," +
+                            "day INTEGER," +
+                            "units_in_day INTEGER," +
+                            "duration INTEGER," +
+                            "room_id INTEGER," +
+                            "group_id INTEGER," +
+                            "execution_type INTEGER," +
+                            "period VARCHAR," +
+                            "course_name VARCHAR," +
+                            "tutor_name VARCHAR," +
+                            "tutor_surname VARCHAR," +
+                            "tutor_code VARCHAR," +
+                            "room_name VARCHAR" +
+                            ")");
+
+                    String selectQuery = "SELECT * FROM Classes";
+                    Cursor c = mydatabase.rawQuery(selectQuery, null);
+
+                    if(c != null && c.getCount()>0)
+                    {
+                        try
+                        {
+                            while (c.moveToNext()) {
+                                Log.d("COURSE NAME", c.getString(c.getColumnIndex("course_name")));
+                                final ListModelSchedules sched = new ListModelSchedules();
+
+                                int setDay = c.getInt(c.getColumnIndex("day"));
+
+                                int setStartTime = c.getInt(c.getColumnIndex("units_in_day"));
+                                int setEndTime = c.getInt(c.getColumnIndex("duration"));
+                                String room = c.getString(c.getColumnIndex("room_name")) + " - Ekonomski fakultet Zagreb\n" +
+                                        "Trg Johna Kennedyja 6, 10000, Zagreb, Croatia";
+                                String title = c.getString(c.getColumnIndex("course_name"));
+                                String desc;
+
+                                switch (c.getInt(c.getColumnIndex("execution_type"))) {
+                                    case 1:
+                                        desc = "Predavanje";
+                                        break;
+                                    case 3:
+                                        desc = "Predavanje";
+                                        break;
+                                    default:
+                                        desc = "Seminar";
+                                        break;
+                                }
+
+
+                                switch (setDay) {
+                                    case 0:
+                                        setDay = Calendar.MONDAY;
+                                        break;
+                                    case 1:
+                                        setDay = Calendar.TUESDAY;
+                                        break;
+                                    case 2:
+                                        setDay = Calendar.WEDNESDAY;
+                                        break;
+                                    case 3:
+                                        setDay = Calendar.THURSDAY;
+                                        break;
+                                    case 4:
+                                        setDay = Calendar.FRIDAY;
+                                        break;
+                                    case 5:
+                                        setDay = Calendar.SATURDAY;
+                                        break;
+                                    case 6:
+                                        setDay = Calendar.SUNDAY;
+                                        break;
+                                }
+
+                                setStartTime = (int) (setStartTime * 0.5);
+                                setStartTime = 7 + setStartTime; // npr 17
+
+                                setEndTime = (int) (setEndTime * 0.5); // npr 2
+                                setEndTime = setStartTime + setEndTime; // npr 17 + 2 = 19 traje do 19 sati
+
+                                if (setDay != 0 && title != null && desc != null && room != null && setStartTime != 0 && setEndTime != 0)
+                                {
+                                    addToCalendar(setDay, title, desc, room, setStartTime, 0, setEndTime, 0);
+                                }
+                            }
+                            MainActivity.this.runOnUiThread(new Runnable() {
+                                public void run() {
+                                    Toast.makeText(MainActivity.this, R.string.addToCalendarSuccess, Toast.LENGTH_LONG).show();
+                                }
+                            });
+
+                        }
+                        catch (final Exception e)
+                        {
+
+                            MainActivity.this.runOnUiThread(new Runnable() {
+                                public void run() {
+                                    Toast.makeText(MainActivity.this, e.toString(), Toast.LENGTH_LONG).show();
+                                }
+                            });
+
+                        }
+
+                    }
+                    else
+                    {
+                        MainActivity.this.runOnUiThread(new Runnable() {
+                            public void run() {
+                                Toast.makeText(MainActivity.this, R.string.addToCalendarEmpty, Toast.LENGTH_LONG).show();
+                            }
+                        });
+
+                    }
+                    c.close();
+                }
+            });
         }
-        c.close();
+
+
     }
 
-    private void addToCalendar(int DAY_WEEK, String TITLE, String DESC, String LOC, int hour_s, int min_s, int hour_e, int min_e)
-    {
+    private void addToCalendar(int DAY_WEEK, String TITLE, String DESC, String LOC, int hour_s, int min_s, int hour_e, int min_e) {
 
-        Uri uri = CalendarContract.Calendars.CONTENT_URI;
+        Uri uri = Calendars.CONTENT_URI;
         String[] projection = new String[]{
-                CalendarContract.Calendars._ID,
-                CalendarContract.Calendars.ACCOUNT_NAME,
-                CalendarContract.Calendars.CALENDAR_DISPLAY_NAME,
-                CalendarContract.Calendars.NAME,
-                CalendarContract.Calendars.CALENDAR_COLOR
+                Calendars._ID,
+                Calendars.ACCOUNT_NAME,
+                Calendars.CALENDAR_DISPLAY_NAME,
+                Calendars.NAME,
+                Calendars.CALENDAR_COLOR
         };
 
         // Construct event details
@@ -1009,22 +1072,29 @@ public class MainActivity extends AppCompatActivity
         endTime.set(year, month, start_day, hour_e, min_e);
         endMillis = endTime.getTimeInMillis();
 
+        DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.MONTH, 3);
+        cal.add(Calendar.DAY_OF_YEAR, 15);
+        final String RRuleEnd = dateFormat.format(cal.getTime());
 
         // Insert Event
         ContentResolver cr = getContentResolver();
         ContentValues values = new ContentValues();
         TimeZone timeZone = TimeZone.getDefault();
-        values.put(CalendarContract.Events.DTSTART, startMillis);
-        values.put(CalendarContract.Events.DTEND, endMillis);
-        values.put(CalendarContract.Events.EVENT_TIMEZONE, timeZone.getID());
+        values.put(Events.DTSTART, startMillis);
+        values.put(Events.DTEND, endMillis);
+        values.put(Events.EVENT_TIMEZONE, timeZone.getID());
 
-        values.put(Events.RRULE, "FREQ=WEEKLY;");
+
+        values.put(Events.RRULE, "FREQ=WEEKLY;UNTIL=" + RRuleEnd);
         values.put(Events.HAS_ALARM, 1);
 
-        values.put(CalendarContract.Events.TITLE, TITLE);
-        values.put(CalendarContract.Events.DESCRIPTION, DESC);
+        values.put(Events.TITLE, TITLE);
+        values.put(Events.DESCRIPTION, DESC);
         values.put(Events.EVENT_LOCATION, LOC);
-        values.put(CalendarContract.Events.CALENDAR_ID, 1);
+        values.put(Events.CALENDAR_ID, 1);
+
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
 
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_CALENDAR}, 101);
@@ -1032,6 +1102,7 @@ public class MainActivity extends AppCompatActivity
         }
 
         uri = cr.insert(CalendarContract.Events.CONTENT_URI, values);
+
 
         // Retrieve ID for new event
         String eventID = uri.getLastPathSegment();
@@ -1047,3 +1118,4 @@ public class MainActivity extends AppCompatActivity
 
     }
 }
+

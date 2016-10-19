@@ -8,8 +8,8 @@ android {
         applicationId "hr.efzg.pculina.efzgraspored"
         minSdkVersion 21
         targetSdkVersion 23
-        versionCode 241
-        versionName "2.4.1"
+        versionCode 242
+        versionName "2.4.2"
     }
     buildTypes {
         release {
@@ -26,4 +26,5 @@ dependencies {
     compile 'com.android.support:support-v4:24.1.1'
     compile 'com.android.support:design:24.1.1'
     compile project(':volley')
+    compile 'com.google.android.gms:play-services-appindexing:8.4.0'
 }
