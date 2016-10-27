@@ -6,8 +6,8 @@
 	{
 		setSession();
 		$servername = 'localhost';
-		$username = 'user';
-		$password = 'pass';
+		$username = 'abcd';
+		$password = 'efgh';
 		
 		$connection = new mysqli($servername, $username, $password);
 		

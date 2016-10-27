@@ -1,12 +1,13 @@
 <?php
-	$servername = "localhost";
-	$username = "efzg_db";
-	$password = "bNJw[^OEb7AO";
+	
+	include'connection_db.php';
+
+	$connection = connectDB();
 	
 	session_start();
 	
 	// Create connection
-	$connection = new mysqli($servername, $username, $password);
+	//$connection = new mysqli($servername, $username, $password);
 
 	// Check connection
 	if ($connection->connect_error) 

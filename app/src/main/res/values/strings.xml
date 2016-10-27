@@ -16,8 +16,10 @@
 
     <string name="addToMySchedule">Dodaj u moju satnicu</string>
     <string name="addToMyScheduleSuccess">Kolegij dodan u satnicu</string>
+    <string name="addToMyScheduleSuccessPlural">Odabrani kolegiji dodani u satnicu</string>
     <string name="removeFromMySchedule">Ukloni</string>
     <string name="removeFromMyScheduleSuccess">Kolegij uklonjen iz satnice</string>
+    <string name="removeFromMyScheduleSuccessPlural">Odabrani kolegiji uklonjeni iz satnice</string>
     <string name="MySchedEmpty">Nemate dodanih kolegija\n\nDugo kliknite na kolegij kako biste ga dodali u satnicu</string>
 
     <string name="navCat7Detail">Ova aplikacija je izrađena u svrhu završnog rada na Ekonomskom Fakultetu u Zagrebu. Sav sadržaj je informativnog karaktera i ne garantira se točnost navedenih podataka.\n\n© 2016 Petar-Krešimir Čulina\npetar.kresimir.culina@gmail.com\n\nVerzija: </string>
@@ -35,7 +37,9 @@
     <string name="tutorname_1">%1$s %2$s</string>
 
     <string name="schedule_type_1">PREDAVANJE - %1$S</string>
+    <string name="schedule_type_11">PREDAVANJE - %1$S\n(%2$S)</string>
     <string name="schedule_type_2">SEMINAR - %1$S</string>
+    <string name="schedule_type_21">SEMINAR - %1$S\n(%2$S)</string>
     <string name="schedule_week">Tjedan: %1$S</string>
 
     <string name="clientLink"><u>www.efzg.hr</u></string>
@@ -47,10 +51,12 @@
 
     <string name="addToCalendar">Dodaj u moj kalendar</string>
     <string name="addToCalendarSuccess">Uspješno ste dodali svoj raspored u svoju kalendar aplikaciju</string>
-    <string name="addToCalendarEmpty">Vaš raspored je trunutno prazan</string>
+    <string name="addToCalendarEmpty">Vaš raspored je trenutno prazan</string>
 
     <string name="addToCalendarTitle">Dodaj u kalendar</string>
     <string name="addToCalendarQuestion">Jesti li sigurni da želite dodati svoj raspored u kalendar na svojem uređaju?</string>
     <string name="yes">Da</string>
     <string name="no">Ne</string>
+
+    <string name="selectAll">ODABERI SVE</string>
 </resources>

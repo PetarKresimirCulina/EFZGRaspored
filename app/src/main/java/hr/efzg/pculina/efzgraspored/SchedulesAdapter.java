@@ -9,10 +9,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 /**
  * Created by Petar-Kresimir Culina on 3/1/2016.
@@ -81,7 +83,7 @@ public class SchedulesAdapter extends BaseAdapter {
 
     @Override
     public boolean isEnabled(int position) {
-        return false;
+        return true;
     }
 
     /*********
@@ -96,6 +98,7 @@ public class SchedulesAdapter extends BaseAdapter {
         public TextView course_room_details;
         public TextView course_weeks;
         public TextView day;
+        public boolean selected;
         public RelativeLayout daybg;
 
 
@@ -104,7 +107,7 @@ public class SchedulesAdapter extends BaseAdapter {
     /******
      * Depends upon data size called for each row , Create each ListView row
      *****/
-    public View getView(int position, View convertView, ViewGroup parent) {
+    public View getView(final int position, View convertView, ViewGroup parent) {
 
         View vi = convertView;
         ViewHolder holder;
@@ -153,10 +156,10 @@ public class SchedulesAdapter extends BaseAdapter {
             tempValues = (ListModelSchedules) data.get(position);
 
             /************  Set Model values in Holder elements ***********/
-            int t_int = Integer.valueOf(tempValues.getUnitsInDay());
+            int t_int = tempValues.getUnitsInDay();
             t_int = (int) (t_int * 0.5);
             t_int = 7 + t_int; // npr 17
-            int t_int2 = Integer.valueOf(tempValues.getDuration());
+            int t_int2 = tempValues.getDuration();
             t_int2 = (int) (t_int2 * 0.5); // npr 2
             t_int2 = t_int + t_int2; // npr 17 + 2 = 19 traje do 19 sati
 
@@ -175,15 +178,24 @@ public class SchedulesAdapter extends BaseAdapter {
             holder.course.setText(tempValues.getCourseName());
 
             //if (tempValues.getTutorCode().equals("none")) {
-                holder.tutor.setText(parent.getContext().getString(R.string.tutorname_1, tempValues.getTutorName(), tempValues.getTutorSurname()));
+            holder.tutor.setText(parent.getContext().getString(R.string.tutorname_1, tempValues.getTutorName(), tempValues.getTutorSurname()));
             /*} else {
                 holder.tutor.setText(parent.getContext().getString(R.string.tutorname_2, tempValues.getTutorCode(), tempValues.getTutorName(), tempValues.getTutorSurname()));
             }*/
 
             if (tempValues.getExecutionType() == 1 || tempValues.getExecutionType() == 3) {
-                holder.course_room_details.setText(parent.getContext().getString(R.string.schedule_type_1, tempValues.getRoomName()));
+                if (Objects.equals(tempValues.getGroupName(), "null")) {
+                    holder.course_room_details.setText(parent.getContext().getString(R.string.schedule_type_1, tempValues.getRoomName()));
+                } else {
+                    holder.course_room_details.setText(parent.getContext().getString(R.string.schedule_type_11, tempValues.getRoomName(), tempValues.getGroupName()));
+                }
+
             } else {
-                holder.course_room_details.setText(parent.getContext().getString(R.string.schedule_type_2, tempValues.getRoomName()));
+                if (Objects.equals(tempValues.getGroupName(), "null")) {
+                    holder.course_room_details.setText(parent.getContext().getString(R.string.schedule_type_2, tempValues.getRoomName()));
+                } else {
+                    holder.course_room_details.setText(parent.getContext().getString(R.string.schedule_type_21, tempValues.getRoomName(), tempValues.getGroupName()));
+                }
             }
 
             holder.course_weeks.setText(parent.getContext().getString(R.string.schedule_week, tempValues.getPeriod()));
@@ -214,10 +226,58 @@ public class SchedulesAdapter extends BaseAdapter {
                     holder.daybg.setBackgroundColor(ContextCompat.getColor(vi.getContext(), R.color.colorPrimary));
                     break;
             }
-            vi.setLongClickable(true);
 
+            //vi.setSelected(true);
+
+            //vi.setClickable(true);
+            // vi.setLongClickable(true);
         }
-        Context mContext = vi.getContext();
+
+        final Context mContext = vi.getContext();
+
+        vi.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                ((MainActivity) mContext).list.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE_MODAL);
+
+                ((MainActivity) mContext).lvPosChecked = true;
+                ((MainActivity) mContext).lvPos = position;
+
+                if (!((MainActivity) mContext).ListSelectionInProgress) {
+                    ((MainActivity) mContext).list.setItemChecked(position, true);
+                    ((MainActivity) mContext).ListSelectionInProgress = true;
+                    return true;
+                } else {
+                    if (!((MainActivity) mContext).list.isItemChecked(position)) {
+                        ((MainActivity) mContext).list.setItemChecked(position, true);
+                        return true;
+                    } else {
+                        ((MainActivity) mContext).list.setItemChecked(position, false);
+                        return true;
+                    }
+                }
+
+                //return false;
+            }
+        });
+
+        vi.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+
+                if (((MainActivity) mContext).ListSelectionInProgress) {
+                    ((MainActivity) mContext).lvPos = position;
+                    ((MainActivity) mContext).lvPos = -1;
+                    if (!((MainActivity) mContext).list.isItemChecked(position)) {
+                        ((MainActivity) mContext).list.setItemChecked(position, true);
+                    } else {
+                        ((MainActivity) mContext).list.setItemChecked(position, false);
+                    }
+                }
+            }
+
+        });
         return vi;
     }
 

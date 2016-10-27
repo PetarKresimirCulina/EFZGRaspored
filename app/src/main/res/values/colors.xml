@@ -5,6 +5,7 @@
     <color name="colorPrimaryDark">#61224f</color>
     <color name="colorAccent">#ffffff</color>
     <color name="colorAccentDark">#FFF1F1F1</color>
+    <color name="colorChecked">#e2e2e2</color>
 
     <color name="colorLV3">#999999</color>
     <color name="colorLV3Dark">#7b7b7b</color>

@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <group
-        android:id="@+id/menu_lv_top"
-        android:checkableBehavior="none">
-
-        <item android:title="@string/addToMySchedule" android:orderInCategory="0" android:id="@+id/myScheduleCMI"/>
-    </group>
-</menu>

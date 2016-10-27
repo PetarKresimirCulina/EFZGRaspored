@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/selAll"
+        android:title="@string/selectAll" />
+
+    <item
+        android:id="@+id/remSch"
+        android:icon="@drawable/ic_remove_circle_outline_black_24dp"
+        android:title="@string/removeFromMySchedule" />
+
+
+</menu>

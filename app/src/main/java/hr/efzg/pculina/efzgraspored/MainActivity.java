@@ -28,8 +28,7 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.Html;
-import android.util.Log;
-import android.view.ContextMenu;
+import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -38,7 +37,7 @@ import android.view.View;
 import android.view.Window;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.AdapterView;
+import android.widget.AbsListView;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -53,7 +52,9 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
+import com.google.android.gms.appindexing.Thing;
 import com.google.android.gms.common.api.GoogleApiClient;
 
 import java.text.DateFormat;
@@ -63,47 +64,59 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TimeZone;
+
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
 
     ListView list;
-    GroupsAdapter adapter;
-    SchedulesAdapter adapterschedules;
-    public MainActivity CustomListView = null;
-    public ArrayList<ListModelGroups> CustomListViewValuesArr = new ArrayList<ListModelGroups>();
-    public ArrayList<ListModelSchedules> CustomListViewValuesArrSchedules = new ArrayList<ListModelSchedules>();
-    public int PROGRAM, YEAR, SUBLEVEL;
+    private GroupsAdapter adapter;
+    private SchedulesAdapter adapterschedules;
+    private MainActivity CustomListView = null;
+    private final ArrayList<ListModelGroups> CustomListViewValuesArr = new ArrayList<ListModelGroups>();
+    private final ArrayList<ListModelSchedules> CustomListViewValuesArrSchedules = new ArrayList<>();
+    private int PROGRAM;
+    private int YEAR;
+    private int SUBLEVEL;
 
-    private String SERVER_HOST = "http://efzg.pkculina.com/php/api/";
-    private String SERVER_PROGRAMS = SERVER_HOST + "android_fetch_data.php";
-    private String SERVER_GROUPS = SERVER_HOST + "get_groups.php";
-    private String SERVER_SCHEDULES = SERVER_HOST + "get_schedules.php";
+    private final String SERVER_HOST = "http://efzg.pkculina.com/php/api/";
+    private final String SERVER_PROGRAMS = SERVER_HOST + "android_fetch_data.php";
+    private final String SERVER_GROUPS = SERVER_HOST + "get_groups.php";
+    private final String SERVER_SCHEDULES = SERVER_HOST + "get_schedules.php";
+    private final String SERVER_DURATION = SERVER_HOST + "get_duration.php";
 
     private int[] prog_id;
     private int[] programs_id = new int[5];
     private String[] programs_name = new String[5];
     private int[] programs_years = new int[5];
 
-    String[] group_name;
-    int[] groups_id;
-    int[] parent_id;
+    private String[] group_name;
+    private int[] groups_id;
+    private int[] parent_id;
 
     private int[] day, units_in_day, duration, room_id, group_id, execution_type;
     private String[] period, course_name, tutor_name, tutor_surname, tutor_code, room_name;
 
-    ProgressBar loading;
-    WebView ISVU;
-    RelativeLayout noInternet;
-    RelativeLayout noSchedule;
-    boolean showSync = true;
-    MenuItem addCalendar = null;
+    private ProgressBar loading;
+    private WebView ISVU;
+    private RelativeLayout noInternet;
+    private RelativeLayout noSchedule;
+    private boolean showSync = true;
+    private MenuItem addCalendar = null;
 
-    static final int MY_PERMISSIONS_REQUEST_WRITE_CALENDAR = 0;
+    public boolean ListSelectionInProgress = false;
+    private long startD;
+    private long endD;
+
+    public int lvPos;
+    public boolean lvPosChecked;
+
+
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
      * See https://g.co/AppIndexing/AndroidStudio for more information.
@@ -121,7 +134,7 @@ public class MainActivity extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.setDrawerListener(toggle);
+        drawer.addDrawerListener(toggle);
         toggle.syncState();
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
@@ -134,7 +147,7 @@ public class MainActivity extends AppCompatActivity
         navigationView.setItemIconTintList(null);
         loading = (ProgressBar) findViewById(R.id.progressBarLoading);
         loading.getIndeterminateDrawable().setColorFilter(
-                getResources().getColor(R.color.colorLV3),
+                ContextCompat.getColor(this, R.color.colorLV3),
                 PorterDuff.Mode.SRC_IN);
 
         ISVU = (WebView) findViewById(R.id.isvuWeb);
@@ -146,14 +159,17 @@ public class MainActivity extends AppCompatActivity
         list = (ListView) findViewById(R.id.listViewCustom);
         list.setDivider(null);
         loadMenuItems();
-        registerForContextMenu(list);
+        //    registerForContextMenu(list);
         showSyncMenuItem(true);
+        loadDuration();
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
+
+
     }
 
-    public void showSyncMenuItem(boolean val) {
+    private void showSyncMenuItem(boolean val) {
         showSync = val;
         supportInvalidateOptionsMenu();
     }
@@ -171,7 +187,6 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void getGroups(final int programid, final int year, final boolean loadCached) {
-        ArrayList<LauncherActivity.ListItem> listMockData = new ArrayList<LauncherActivity.ListItem>();
 
         RequestQueue queue;
         StringRequest sr;
@@ -264,7 +279,7 @@ public class MainActivity extends AppCompatActivity
         }) {
             @Override
             protected Map<String, String> getParams() {
-                Map<String, String> params = new HashMap<String, String>();
+                Map<String, String> params = new HashMap<>();
                 params.put("programid", String.valueOf(programid));
                 params.put("year", String.valueOf(year));
 
@@ -274,7 +289,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             public Map<String, String> getHeaders() throws AuthFailureError {
                 //params.put("Content-Type", "application/x-www-form-urlencoded");
-                return new HashMap<String, String>();
+                return new HashMap<>();
             }
         };
         showLoading();
@@ -292,7 +307,7 @@ public class MainActivity extends AppCompatActivity
         d.closeDrawers();
     }
 
-    public void loadMySchedule() {
+    private void loadMySchedule() {
         noSchedule.setVisibility(View.INVISIBLE);
         SQLiteDatabase mydatabase = openOrCreateDatabase("MyScheduleDB", MODE_PRIVATE, null);
         mydatabase.execSQL("CREATE TABLE IF NOT EXISTS Classes(" +
@@ -308,7 +323,8 @@ public class MainActivity extends AppCompatActivity
                 "tutor_name VARCHAR," +
                 "tutor_surname VARCHAR," +
                 "tutor_code VARCHAR," +
-                "room_name VARCHAR" +
+                "room_name VARCHAR," +
+                "group_name VARCHAR" +
                 ")");
 
         String selectQuery = "SELECT * FROM Classes";
@@ -335,6 +351,7 @@ public class MainActivity extends AppCompatActivity
             sched.setTutorSurname(c.getString(c.getColumnIndex("tutor_surname")));
             sched.setTutorCode(c.getString(c.getColumnIndex("tutor_code")));
             sched.setRoomName(c.getString(c.getColumnIndex("room_name")));
+            sched.setGroupName(c.getString(c.getColumnIndex("group_name")));
 
             CustomListViewValuesArrSchedules.add(sched);
 
@@ -357,6 +374,7 @@ public class MainActivity extends AppCompatActivity
 
         if (c.getCount() > 0) {
             list.setAdapter(adapterschedules);
+            list.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
         }
 
         if (c.getCount() == 0) {
@@ -365,10 +383,95 @@ public class MainActivity extends AppCompatActivity
 
         SUBLEVEL = 5;
         hideLoading();
+
+        list.setMultiChoiceModeListener(new AbsListView.MultiChoiceModeListener() {
+            @Override
+            public void onItemCheckedStateChanged(ActionMode mode, int position, long id, boolean checked) {
+                if (position == lvPos && checked != lvPosChecked) {
+                    list.setItemChecked(position, true);
+                }
+                mode.setTitle(Integer.toString(list.getCheckedItemCount()));
+            }
+
+            @Override
+            public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+                ListSelectionInProgress = true;
+                MenuInflater inflater = mode.getMenuInflater();
+                if (SUBLEVEL == 1) {
+                    inflater.inflate(R.menu.action_mode_add, menu);
+                } else if (SUBLEVEL == 5) // SATNICA
+                {
+                    inflater.inflate(R.menu.action_mode_remove, menu);
+                }
+
+                return true;
+            }
+
+            @Override
+            public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+                return false;
+            }
+
+            @Override
+            public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+
+                int c;
+                switch (item.getItemId()) {
+                    case R.id.selAll:
+                        for (int i = 0; i < list.getAdapter().getCount(); i++) {
+                            list.setItemChecked(i, true);
+                        }
+                        break;
+                    case R.id.addSch:
+                        c = 0;
+                        for (int i = 0; i < list.getAdapter().getCount(); i++) {
+                            if (list.isItemChecked(i)) {
+                                addToSchedule(i);
+                                c++;
+                            }
+                        }
+                        if (c > 1) {
+                            Toast.makeText(MainActivity.this, R.string.addToMyScheduleSuccessPlural, Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(MainActivity.this, R.string.addToMyScheduleSuccess, Toast.LENGTH_SHORT).show();
+                        }
+                        mode.finish();
+                        break;
+                    case R.id.remSch:
+                        c = 0;
+                        if (list.getAdapter() != null) {
+                            for (int i = 0; i < list.getAdapter().getCount(); i++) {
+                                if (list.isItemChecked(i)) {
+                                    removeFromSchedule(i);
+                                    c++;
+                                }
+                            }
+                            if (c > 1) {
+                                Toast.makeText(MainActivity.this, R.string.removeFromMyScheduleSuccessPlural, Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(MainActivity.this, R.string.removeFromMyScheduleSuccess, Toast.LENGTH_SHORT).show();
+                            }
+                            loadMySchedule();
+                            mode.finish();
+                        }
+
+                        break;
+                }
+
+                return false;
+            }
+
+            @Override
+            public void onDestroyActionMode(ActionMode mode) {
+                ListSelectionInProgress = false;
+            }
+        });
+
         setTitle(R.string.navCat3);
     }
 
-    public void loadMenuItems() {
+    @SuppressWarnings("WeakerAccess")
+    private void loadMenuItems() {
         RequestQueue queue = Volley.newRequestQueue(this);
         StringRequest sr = new StringRequest(Request.Method.POST, SERVER_PROGRAMS, new Response.Listener<String>() {
             @Override
@@ -423,7 +526,7 @@ public class MainActivity extends AppCompatActivity
         }) {
             @Override
             protected Map<String, String> getParams() {
-                Map<String, String> params = new HashMap<String, String>();
+                Map<String, String> params = new HashMap<>();
                 params.put("method", "0");
 
                 return params;
@@ -432,7 +535,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             public Map<String, String> getHeaders() throws AuthFailureError {
                 //params.put("Content-Type", "application/x-www-form-urlencoded");
-                return new HashMap<String, String>();
+                return new HashMap<>();
             }
         };
         showLoading();
@@ -440,7 +543,7 @@ public class MainActivity extends AppCompatActivity
         loadMySchedule();
     }
 
-    public void createSubMenus(int id, int prog_id, final String name, int years) {
+    private void createSubMenus(int id, int prog_id, final String name, int years) {
         NavigationView nav = (NavigationView) findViewById(R.id.nav_view);
         Menu m = nav.getMenu();
 
@@ -623,7 +726,6 @@ public class MainActivity extends AppCompatActivity
             list.setVisibility(View.INVISIBLE);
             ISVU.setVisibility(View.VISIBLE);
 
-            final ProgressBar p = loading;
             ISVU.setWebViewClient(new WebViewClient() {
                 public void onPageFinished(WebView view, String url) {
                     hideLoading();
@@ -642,104 +744,102 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
-    @Override
-    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
-        super.onCreateContextMenu(menu, v, menuInfo);
-        if (v.getId() == R.id.listViewCustom && SUBLEVEL > 0) {
-            if (SUBLEVEL == 5) {
-                MenuInflater inflater = getMenuInflater();
-                inflater.inflate(R.menu.lv_menu2, menu);
-            } else {
-                MenuInflater inflater = getMenuInflater();
-                inflater.inflate(R.menu.lv_menu, menu);
-            }
-
-        }
-    }
-
-    @Override
-    public boolean onContextItemSelected(MenuItem item) {
-        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
-        switch (item.getItemId()) {
-            case R.id.myScheduleCMI:
-                ListModelSchedules a = CustomListViewValuesArrSchedules.get(info.position);
-
-                int day, units_in_day, duration, room_id, group_id, execution_type;
-                String period, course_name, tutor_name, tutor_surname, tutor_code, room_name;
-
-                day = a.getDay();
-                units_in_day = a.getUnitsInDay();
-                duration = a.getDuration();
-                room_id = a.getRoomId();
-                group_id = a.getGroupId();
-                execution_type = a.getExecutionType();
-
-                period = a.getPeriod();
-                course_name = a.getCourseName();
-                tutor_name = a.getTutorName();
-                tutor_surname = a.getTutorSurname();
-                tutor_code = a.getTutorCode();
-                room_name = a.getRoomName();
-
-
-                SQLiteDatabase mydatabase = openOrCreateDatabase("MyScheduleDB", MODE_PRIVATE, null);
-                mydatabase.execSQL("INSERT INTO Classes (" +
-                        "day, " +
-                        "units_in_day, " +
-                        "duration, " +
-                        "room_id, " +
-                        "group_id, " +
-                        "execution_type, " +
-                        "period, " +
-                        "course_name, " +
-                        "tutor_name, " +
-                        "tutor_surname, " +
-                        "tutor_code, " +
-                        "room_name" +
-                        ") VALUES (" +
-                        day + ", " +
-                        units_in_day + ", " +
-                        duration + ", " +
-                        room_id + ", " +
-                        group_id + ", " +
-                        execution_type + ", '" +
-                        period + "', '" +
-                        course_name + "', '" +
-                        tutor_name + "', '" +
-                        tutor_surname + "', '" +
-                        tutor_code + "', '" +
-                        room_name
-                        + "')");
-                // day (int)
-                // units in day (int)
-                // from
-                // to
-                // class_name
-                // tutor_name
-                // class_details
-                // weeks
-
-                Toast.makeText(MainActivity.this, R.string.addToMyScheduleSuccess, Toast.LENGTH_SHORT).show();
-                return true;
-            case R.id.myScheduleCMIRemove:
-                SQLiteDatabase db = openOrCreateDatabase("MyScheduleDB", MODE_PRIVATE, null);
-                ListModelSchedules b = CustomListViewValuesArrSchedules.get(info.position);
-                db.delete("Classes", "day" + "=" + b.getDay() + " and " + "units_in_day" + "=" + String.valueOf(b.getUnitsInDay()) + " and " + "course_name" + "='" + b.getCourseName() + "'", null);
-
-                loadMySchedule();
-                Toast.makeText(MainActivity.this, R.string.removeFromMyScheduleSuccess, Toast.LENGTH_SHORT).show();
-                return true;
-            default:
-                return super.onContextItemSelected(item);
-        }
-    }
-
-    public void showLoading() {
+    private void showLoading() {
         loading.setVisibility(View.VISIBLE);
     }
 
-    public void hideLoading() {
+    private void hideLoading() {
         loading.setVisibility(View.INVISIBLE);
+    }
+
+    private void removeFromSchedule(int pos) {
+        SQLiteDatabase db = openOrCreateDatabase("MyScheduleDB", MODE_PRIVATE, null);
+        ListModelSchedules b = CustomListViewValuesArrSchedules.get((Integer) list.getItemAtPosition(pos));
+        db.delete("Classes", "day" + "=" + b.getDay() + " and " + "units_in_day" + "=" + String.valueOf(b.getUnitsInDay()) + " and " + "course_name" + "='" + b.getCourseName() + "'", null);
+    }
+
+    private void addToSchedule(int pos) {
+        ListModelSchedules a = CustomListViewValuesArrSchedules.get((Integer) list.getItemAtPosition(pos));
+
+        int day, units_in_day, duration, room_id, group_id, execution_type;
+        String period, course_name, tutor_name, tutor_surname, tutor_code, room_name, group_name;
+
+        day = a.getDay();
+        units_in_day = a.getUnitsInDay();
+        duration = a.getDuration();
+        room_id = a.getRoomId();
+        group_id = a.getGroupId();
+        execution_type = a.getExecutionType();
+
+        period = a.getPeriod();
+        course_name = a.getCourseName();
+        tutor_name = a.getTutorName();
+        tutor_surname = a.getTutorSurname();
+        tutor_code = a.getTutorCode();
+        room_name = a.getRoomName();
+        group_name = a.getGroupName();
+
+
+        SQLiteDatabase mydatabase = openOrCreateDatabase("MyScheduleDB", MODE_PRIVATE, null);
+        mydatabase.execSQL("INSERT INTO Classes (" +
+                "day, " +
+                "units_in_day, " +
+                "duration, " +
+                "room_id, " +
+                "group_id, " +
+                "execution_type, " +
+                "period, " +
+                "course_name, " +
+                "tutor_name, " +
+                "tutor_surname, " +
+                "tutor_code, " +
+                "room_name, " +
+                "group_name" +
+                ") VALUES (" +
+                day + ", " +
+                units_in_day + ", " +
+                duration + ", " +
+                room_id + ", " +
+                group_id + ", " +
+                execution_type + ", '" +
+                period + "', '" +
+                course_name + "', '" +
+                tutor_name + "', '" +
+                tutor_surname + "', '" +
+                tutor_code + "', '" +
+                room_name + "', '" +
+                group_name
+                + "')");
+        // day (int)
+        // units in day (int)
+        // from
+        // to
+        // class_name
+        // tutor_name
+        // class_details
+        // weeks
+    }
+
+    private void loadDuration() {
+        RequestQueue queue = Volley.newRequestQueue(this);
+        StringRequest sr = new StringRequest(Request.Method.POST, SERVER_DURATION, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+
+                if (response.length() > 0) {
+                    String sep[] = response.split("&");
+
+                    startD = Long.parseLong(sep[0].trim());
+                    endD = Long.parseLong(sep[1].trim());
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Toast.makeText(MainActivity.this, error.toString(), Toast.LENGTH_LONG).show();
+            }
+        });
+        queue.add(sr);
     }
 
     public void loadGroupSchedule(final int gid) {
@@ -749,14 +849,13 @@ public class MainActivity extends AppCompatActivity
         list = (ListView) findViewById(R.id.listViewCustom);
         list.setAdapter(null);
 
+
         RequestQueue queue = Volley.newRequestQueue(this);
         StringRequest sr = new StringRequest(Request.Method.POST, SERVER_SCHEDULES, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
 
                 String sep[] = response.split("<>");
-                Log.d("Group resonse", response);
-                Log.d("Group response lenth", String.valueOf(response.length()));
 
                 day = new int[sep.length];
                 units_in_day = new int[sep.length];
@@ -771,6 +870,7 @@ public class MainActivity extends AppCompatActivity
                 tutor_surname = new String[sep.length];
                 tutor_code = new String[sep.length];
                 room_name = new String[sep.length];
+                group_name = new String[sep.length];
 
                 if (response.length() > 0) {
                     for (int i = 0; i < sep.length; i++) {
@@ -818,6 +918,15 @@ public class MainActivity extends AppCompatActivity
                             room_name[i] = sep_si[11];
                             sched.setRoomName(room_name[i]);
 
+                            group_name[i] = sep_si[12];
+                            if (!Objects.equals(group_name[i], "null")) {
+                                group_name[i] = group_name[i].replaceAll("(?i)(?<=[0-9])_(?=[A-Z])", " ");
+                                sched.setGroupName(group_name[i]);
+                            } else {
+                                sched.setGroupName("null");
+                            }
+
+
                             CustomListViewValuesArrSchedules.add(sched);
                         }
 
@@ -842,6 +951,8 @@ public class MainActivity extends AppCompatActivity
 
                     adapterschedules = new SchedulesAdapter(CustomListView, CustomListViewValuesArrSchedules, res);
                     list.setAdapter(adapterschedules);
+
+
                     hideLoading();
                 } else {
                     list.setAdapter(null);
@@ -872,7 +983,7 @@ public class MainActivity extends AppCompatActivity
         }) {
             @Override
             protected Map<String, String> getParams() {
-                Map<String, String> params = new HashMap<String, String>();
+                Map<String, String> params = new HashMap<>();
                 params.put("groupid", String.valueOf(gid));
 
                 return params;
@@ -881,11 +992,95 @@ public class MainActivity extends AppCompatActivity
             @Override
             public Map<String, String> getHeaders() throws AuthFailureError {
                 //params.put("Content-Type", "application/x-www-form-urlencoded");
-                return new HashMap<String, String>();
+                return new HashMap<>();
             }
         };
         showLoading();
         queue.add(sr);
+
+
+        list.setMultiChoiceModeListener(new AbsListView.MultiChoiceModeListener() {
+            @Override
+            public void onItemCheckedStateChanged(ActionMode mode, int position, long id, boolean checked) {
+                if (position == lvPos && checked != lvPosChecked) {
+                    list.setItemChecked(position, true);
+                }
+                mode.setTitle(Integer.toString(list.getCheckedItemCount()));
+            }
+
+            @Override
+            public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+                ListSelectionInProgress = true;
+                MenuInflater inflater = mode.getMenuInflater();
+                if (SUBLEVEL == 1) {
+                    inflater.inflate(R.menu.action_mode_add, menu);
+                } else if (SUBLEVEL == 5) // SATNICA
+                {
+                    inflater.inflate(R.menu.action_mode_remove, menu);
+                }
+
+                return true;
+            }
+
+            @Override
+            public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+                return false;
+            }
+
+            @Override
+            public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+                int c;
+                switch (item.getItemId()) {
+                    case R.id.selAll:
+                        for (int i = 0; i < list.getAdapter().getCount(); i++) {
+                            list.setItemChecked(i, true);
+                        }
+                        break;
+                    case R.id.addSch:
+                        c = 0;
+                        for (int i = 0; i < list.getAdapter().getCount(); i++) {
+                            if (list.isItemChecked(i)) {
+                                addToSchedule(i);
+                                c++;
+                            }
+                        }
+                        if (c > 1) {
+                            Toast.makeText(MainActivity.this, R.string.addToMyScheduleSuccessPlural, Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(MainActivity.this, R.string.addToMyScheduleSuccess, Toast.LENGTH_SHORT).show();
+                        }
+                        mode.finish();
+                        break;
+                    case R.id.remSch:
+                        c = 0;
+                        if (list.getAdapter() != null) {
+                            for (int i = 0; i < list.getAdapter().getCount(); i++) {
+                                if (list.isItemChecked(i)) {
+                                    removeFromSchedule(i);
+                                    c++;
+                                }
+                            }
+                            if (c > 1) {
+                                Toast.makeText(MainActivity.this, R.string.removeFromMyScheduleSuccessPlural, Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(MainActivity.this, R.string.removeFromMyScheduleSuccess, Toast.LENGTH_SHORT).show();
+                            }
+                            loadMySchedule();
+                            mode.finish();
+                        }
+
+                        break;
+                }
+
+                return false;
+            }
+
+            @Override
+            public void onDestroyActionMode(ActionMode mode) {
+                ListSelectionInProgress = false;
+            }
+        });
+
     }
 
     @Override
@@ -897,19 +1092,14 @@ public class MainActivity extends AppCompatActivity
                 } else {
                     Toast.makeText(MainActivity.this, "Morate dozvoliti zapis u kalendar kako bi ova funkcionalnost bila omogućena", Toast.LENGTH_LONG).show();
                 }
-                return;
             }
         }
     }
 
-    private void pushToCalendar()
-    {
-        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED)
-        {
+    private void pushToCalendar() {
+        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_CALENDAR}, 1);
-        }
-        else
-        {
+        } else {
             AsyncTask.execute(new Runnable() {
                 @Override
                 public void run() {
@@ -927,20 +1117,16 @@ public class MainActivity extends AppCompatActivity
                             "tutor_name VARCHAR," +
                             "tutor_surname VARCHAR," +
                             "tutor_code VARCHAR," +
-                            "room_name VARCHAR" +
+                            "room_name VARCHAR," +
+                            "group_name VARCHAR" +
                             ")");
 
                     String selectQuery = "SELECT * FROM Classes";
                     Cursor c = mydatabase.rawQuery(selectQuery, null);
 
-                    if(c != null && c.getCount()>0)
-                    {
-                        try
-                        {
+                    if (c != null && c.getCount() > 0) {
+                        try {
                             while (c.moveToNext()) {
-                                Log.d("COURSE NAME", c.getString(c.getColumnIndex("course_name")));
-                                final ListModelSchedules sched = new ListModelSchedules();
-
                                 int setDay = c.getInt(c.getColumnIndex("day"));
 
                                 int setStartTime = c.getInt(c.getColumnIndex("units_in_day"));
@@ -961,7 +1147,11 @@ public class MainActivity extends AppCompatActivity
                                         desc = "Seminar";
                                         break;
                                 }
-
+                                if (!Objects.equals(c.getString(c.getColumnIndex("group_name")), "null")) {
+                                    desc = desc + " " + c.getString(c.getColumnIndex("group_name")) + "\n" + "Predavač: " + c.getString(c.getColumnIndex("tutor_name")) + " " + c.getString(c.getColumnIndex("tutor_surname"));
+                                } else {
+                                    desc = desc + "\n" + "Predavač: " + c.getString(c.getColumnIndex("tutor_name")) + " " + c.getString(c.getColumnIndex("tutor_surname"));
+                                }
 
                                 switch (setDay) {
                                     case 0:
@@ -993,9 +1183,8 @@ public class MainActivity extends AppCompatActivity
                                 setEndTime = (int) (setEndTime * 0.5); // npr 2
                                 setEndTime = setStartTime + setEndTime; // npr 17 + 2 = 19 traje do 19 sati
 
-                                if (setDay != 0 && title != null && desc != null && room != null && setStartTime != 0 && setEndTime != 0)
-                                {
-                                    addToCalendar(setDay, title, desc, room, setStartTime, 0, setEndTime, 0);
+                                if (setDay != 0 && title != null && desc != null && room != null && setStartTime != 0 && setEndTime != 0) {
+                                    addToCalendar(setDay, title, desc, room, setStartTime, setEndTime);
                                 }
                             }
                             MainActivity.this.runOnUiThread(new Runnable() {
@@ -1004,9 +1193,7 @@ public class MainActivity extends AppCompatActivity
                                 }
                             });
 
-                        }
-                        catch (final Exception e)
-                        {
+                        } catch (final Exception e) {
 
                             MainActivity.this.runOnUiThread(new Runnable() {
                                 public void run() {
@@ -1016,9 +1203,7 @@ public class MainActivity extends AppCompatActivity
 
                         }
 
-                    }
-                    else
-                    {
+                    } else {
                         MainActivity.this.runOnUiThread(new Runnable() {
                             public void run() {
                                 Toast.makeText(MainActivity.this, R.string.addToCalendarEmpty, Toast.LENGTH_LONG).show();
@@ -1030,52 +1215,47 @@ public class MainActivity extends AppCompatActivity
                 }
             });
         }
-
-
     }
 
-    private void addToCalendar(int DAY_WEEK, String TITLE, String DESC, String LOC, int hour_s, int min_s, int hour_e, int min_e) {
+    private void addToCalendar(int DAY_WEEK, String TITLE, String DESC, String LOC, int hour_s, int hour_e) {
 
-        Uri uri = Calendars.CONTENT_URI;
-        String[] projection = new String[]{
-                Calendars._ID,
-                Calendars.ACCOUNT_NAME,
-                Calendars.CALENDAR_DISPLAY_NAME,
-                Calendars.NAME,
-                Calendars.CALENDAR_COLOR
-        };
-
-        // Construct event details
-        long startMillis = 0;
-        long endMillis = 0;
+        /* Construct event details */
+        long startMillis;
+        long endMillis;
         int year = Calendar.getInstance().get(Calendar.YEAR);
         int month = Calendar.getInstance().get(Calendar.MONTH);
 
         Calendar now = Calendar.getInstance();
 
+        now.setTimeInMillis(startD);
+
         int day = now.get(Calendar.DAY_OF_WEEK);
         int daym = now.get(Calendar.DAY_OF_MONTH);
-        int start_day = 0;
+        int start_day;
 
         if (day != DAY_WEEK) {
-            start_day = daym - (day - DAY_WEEK);
-            //Toast.makeText(this, Integer.toString(start_day), Toast.LENGTH_LONG).show();
+
+            if (daym - day < 0) {
+                start_day = daym + DAY_WEEK;
+            } else {
+                start_day = daym - (day - DAY_WEEK);
+            }
+
         } else {
             start_day = daym;
         }
 
 
         Calendar beginTime = Calendar.getInstance();
-        beginTime.set(year, month, start_day, hour_s, min_s);
+        beginTime.set(year, month, start_day, hour_s, 0);
         startMillis = beginTime.getTimeInMillis();
         Calendar endTime = Calendar.getInstance();
-        endTime.set(year, month, start_day, hour_e, min_e);
+        endTime.set(year, month, start_day, hour_e, 0);
         endMillis = endTime.getTimeInMillis();
 
-        DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
+        DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd", Locale.getDefault());
         Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.MONTH, 3);
-        cal.add(Calendar.DAY_OF_YEAR, 15);
+        cal.setTimeInMillis(endD);
         final String RRuleEnd = dateFormat.format(cal.getTime());
 
         // Insert Event
@@ -1101,12 +1281,11 @@ public class MainActivity extends AppCompatActivity
 
         }
 
-        uri = cr.insert(CalendarContract.Events.CONTENT_URI, values);
+        Uri uri = cr.insert(Events.CONTENT_URI, values);
 
 
         // Retrieve ID for new event
         String eventID = uri.getLastPathSegment();
-
 
 
         ContentValues reminders = new ContentValues();
@@ -1114,8 +1293,44 @@ public class MainActivity extends AppCompatActivity
         reminders.put(CalendarContract.Reminders.METHOD, CalendarContract.Reminders.METHOD_ALERT);
         reminders.put(CalendarContract.Reminders.MINUTES, 15);
 
-        Uri uri2 = cr.insert(CalendarContract.Reminders.CONTENT_URI, reminders);
+        cr.insert(CalendarContract.Reminders.CONTENT_URI, reminders);
 
+    }
+
+    /**
+     * ATTENTION: This was auto-generated to implement the App Indexing API.
+     * See https://g.co/AppIndexing/AndroidStudio for more information.
+     */
+    public Action getIndexApiAction() {
+        Thing object = new Thing.Builder()
+                .setName("Main Page") // TODO: Define a title for the content shown.
+                // TODO: Make sure this auto-generated URL is correct.
+                .setUrl(Uri.parse("http://[ENTER-YOUR-URL-HERE]"))
+                .build();
+        return new Action.Builder(Action.TYPE_VIEW)
+                .setObject(object)
+                .setActionStatus(Action.STATUS_TYPE_COMPLETED)
+                .build();
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        client.connect();
+        AppIndex.AppIndexApi.start(client, getIndexApiAction());
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        AppIndex.AppIndexApi.end(client, getIndexApiAction());
+        client.disconnect();
     }
 }
 

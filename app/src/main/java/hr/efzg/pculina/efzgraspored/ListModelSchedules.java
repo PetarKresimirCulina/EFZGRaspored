@@ -6,11 +6,16 @@ package hr.efzg.pculina.efzgraspored;
 public class ListModelSchedules {
 
     private int day, units_in_day, duration, room_id, group_id, execution_type;
-    private String period, course_name, tutor_name, tutor_surname, tutor_code, room_name;
+    private String period, course_name, tutor_name, tutor_surname, tutor_code, room_name, group_name;
+    private boolean selected;
 
     /***********
      * Set Methods
      ******************/
+
+    public void setSelectedA(boolean selected) {
+        this.selected = selected;
+    }
 
     public void setDay(int day) {
         this.day = day;
@@ -60,9 +65,17 @@ public class ListModelSchedules {
         this.room_name = room_name;
     }
 
+    public void setGroupName(String group_name) {
+        this.group_name = group_name;
+    }
+
     /***********
      * Get Methods
      ****************/
+
+    public boolean getSelectedA() {
+        return this.selected;
+    }
 
     public int getDay() {
         return this.day;
@@ -110,6 +123,10 @@ public class ListModelSchedules {
 
     public String getRoomName() {
         return this.room_name;
+    }
+
+    public String getGroupName() {
+        return this.group_name;
     }
 
 }
