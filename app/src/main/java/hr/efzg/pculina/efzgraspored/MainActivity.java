@@ -497,7 +497,7 @@ public class MainActivity extends AppCompatActivity
                         createSubMenus(prog_id[i], programs_id[i], programs_name[i], programs_years[i]);
                     }
                 } catch (Exception e) {
-                    Toast.makeText(MainActivity.this, "Dogodila se greška!\n" + e.toString(), Toast.LENGTH_LONG).show();
+                    Toast.makeText(MainActivity.this, "Dogodila se greška!\n" + e.toString(), Toast.LENGTH_SHORT).show();
                 }
 
                 hideLoading();
@@ -638,7 +638,15 @@ public class MainActivity extends AppCompatActivity
             builder.setMessage(R.string.addToCalendarQuestion);
             builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int id) {
-                    pushToCalendar();
+                    if(startD != 0 && endD != 0)
+                    {
+                        pushToCalendar();
+                    }
+                    else
+                    {
+                        Toast.makeText(MainActivity.this, R.string.internet, Toast.LENGTH_SHORT).show();
+                    }
+
                     dialog.dismiss();
                 }
             });
@@ -836,7 +844,7 @@ public class MainActivity extends AppCompatActivity
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                Toast.makeText(MainActivity.this, error.toString(), Toast.LENGTH_LONG).show();
+                Toast.makeText(MainActivity.this, error.toString(), Toast.LENGTH_SHORT).show();
             }
         });
         queue.add(sr);
@@ -1090,7 +1098,7 @@ public class MainActivity extends AppCompatActivity
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     pushToCalendar();
                 } else {
-                    Toast.makeText(MainActivity.this, "Morate dozvoliti zapis u kalendar kako bi ova funkcionalnost bila omogućena", Toast.LENGTH_LONG).show();
+                    Toast.makeText(MainActivity.this, "Morate dozvoliti zapis u kalendar kako bi ova funkcionalnost bila omogućena", Toast.LENGTH_SHORT).show();
                 }
             }
         }
@@ -1189,7 +1197,7 @@ public class MainActivity extends AppCompatActivity
                             }
                             MainActivity.this.runOnUiThread(new Runnable() {
                                 public void run() {
-                                    Toast.makeText(MainActivity.this, R.string.addToCalendarSuccess, Toast.LENGTH_LONG).show();
+                                    Toast.makeText(MainActivity.this, R.string.addToCalendarSuccess, Toast.LENGTH_SHORT).show();
                                 }
                             });
 
@@ -1197,7 +1205,7 @@ public class MainActivity extends AppCompatActivity
 
                             MainActivity.this.runOnUiThread(new Runnable() {
                                 public void run() {
-                                    Toast.makeText(MainActivity.this, e.toString(), Toast.LENGTH_LONG).show();
+                                    Toast.makeText(MainActivity.this, e.toString(), Toast.LENGTH_SHORT).show();
                                 }
                             });
 
@@ -1206,7 +1214,7 @@ public class MainActivity extends AppCompatActivity
                     } else {
                         MainActivity.this.runOnUiThread(new Runnable() {
                             public void run() {
-                                Toast.makeText(MainActivity.this, R.string.addToCalendarEmpty, Toast.LENGTH_LONG).show();
+                                Toast.makeText(MainActivity.this, R.string.addToCalendarEmpty, Toast.LENGTH_SHORT).show();
                             }
                         });
 
