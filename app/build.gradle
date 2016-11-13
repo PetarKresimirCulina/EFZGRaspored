@@ -8,8 +8,8 @@ android {
         applicationId "hr.efzg.pculina.efzgraspored"
         minSdkVersion 21
         targetSdkVersion 23
-        versionCode 253
-        versionName "2.5.3"
+        versionCode 258
+        versionName "2.5.8"
     }
     buildTypes {
         release {

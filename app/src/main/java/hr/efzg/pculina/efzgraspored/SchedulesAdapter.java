@@ -9,7 +9,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
@@ -227,57 +226,7 @@ public class SchedulesAdapter extends BaseAdapter {
                     break;
             }
 
-            //vi.setSelected(true);
-
-            //vi.setClickable(true);
-            // vi.setLongClickable(true);
         }
-
-        final Context mContext = vi.getContext();
-
-        vi.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View v) {
-                ((MainActivity) mContext).list.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE_MODAL);
-
-                ((MainActivity) mContext).lvPosChecked = true;
-                ((MainActivity) mContext).lvPos = position;
-
-                if (!((MainActivity) mContext).ListSelectionInProgress) {
-                    ((MainActivity) mContext).list.setItemChecked(position, true);
-                    ((MainActivity) mContext).ListSelectionInProgress = true;
-                    return true;
-                } else {
-                    if (!((MainActivity) mContext).list.isItemChecked(position)) {
-                        ((MainActivity) mContext).list.setItemChecked(position, true);
-                        return true;
-                    } else {
-                        ((MainActivity) mContext).list.setItemChecked(position, false);
-                        return true;
-                    }
-                }
-
-                //return false;
-            }
-        });
-
-        vi.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-
-                if (((MainActivity) mContext).ListSelectionInProgress) {
-                    ((MainActivity) mContext).lvPos = position;
-                    ((MainActivity) mContext).lvPos = -1;
-                    if (!((MainActivity) mContext).list.isItemChecked(position)) {
-                        ((MainActivity) mContext).list.setItemChecked(position, true);
-                    } else {
-                        ((MainActivity) mContext).list.setItemChecked(position, false);
-                    }
-                }
-            }
-
-        });
         return vi;
     }
 

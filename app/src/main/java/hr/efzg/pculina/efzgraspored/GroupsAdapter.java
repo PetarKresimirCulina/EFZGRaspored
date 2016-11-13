@@ -133,6 +133,7 @@ public class GroupsAdapter extends BaseAdapter {
 
                 @Override
                 public void onClick(View v) {
+                    ((MainActivity) mContext).lastProgramName = ((MainActivity) mContext).getTitle().toString();
                     ((MainActivity) mContext).setTitle(name);
                     ((MainActivity) mContext).loadGroupSchedule(gid);
 

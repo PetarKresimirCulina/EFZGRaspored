@@ -2,7 +2,6 @@ package hr.efzg.pculina.efzgraspored;
 
 import android.Manifest;
 import android.app.Dialog;
-import android.app.LauncherActivity;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.DialogInterface;
@@ -16,7 +15,6 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.CalendarContract;
-import android.provider.CalendarContract.Calendars;
 import android.provider.CalendarContract.Events;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
@@ -28,6 +26,7 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.Html;
+import android.util.Log;
 import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -112,10 +111,7 @@ public class MainActivity extends AppCompatActivity
     public boolean ListSelectionInProgress = false;
     private long startD;
     private long endD;
-
-    public int lvPos;
-    public boolean lvPosChecked;
-
+    public String lastProgramName;
 
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
@@ -152,6 +148,9 @@ public class MainActivity extends AppCompatActivity
 
         ISVU = (WebView) findViewById(R.id.isvuWeb);
         ISVU.setVisibility(View.INVISIBLE);
+        ISVU.setFocusable(true);
+        ISVU.setFocusableInTouchMode(true);
+
         noInternet = (RelativeLayout) findViewById(R.id.noInternet);
         noInternet.setVisibility(View.INVISIBLE);
         noSchedule = (RelativeLayout) findViewById(R.id.MyScheduleEmpty);
@@ -374,7 +373,6 @@ public class MainActivity extends AppCompatActivity
 
         if (c.getCount() > 0) {
             list.setAdapter(adapterschedules);
-            list.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
         }
 
         if (c.getCount() == 0) {
@@ -384,18 +382,16 @@ public class MainActivity extends AppCompatActivity
         SUBLEVEL = 5;
         hideLoading();
 
+        list.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE_MODAL);
         list.setMultiChoiceModeListener(new AbsListView.MultiChoiceModeListener() {
             @Override
             public void onItemCheckedStateChanged(ActionMode mode, int position, long id, boolean checked) {
-                if (position == lvPos && checked != lvPosChecked) {
-                    list.setItemChecked(position, true);
-                }
                 mode.setTitle(Integer.toString(list.getCheckedItemCount()));
             }
 
             @Override
             public boolean onCreateActionMode(ActionMode mode, Menu menu) {
-                ListSelectionInProgress = true;
+                Log.d("Called", "true");
                 MenuInflater inflater = mode.getMenuInflater();
                 if (SUBLEVEL == 1) {
                     inflater.inflate(R.menu.action_mode_add, menu);
@@ -497,7 +493,7 @@ public class MainActivity extends AppCompatActivity
                         createSubMenus(prog_id[i], programs_id[i], programs_name[i], programs_years[i]);
                     }
                 } catch (Exception e) {
-                    Toast.makeText(MainActivity.this, "Dogodila se greška!\n" + e.toString(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, R.string.internet, Toast.LENGTH_SHORT).show();
                 }
 
                 hideLoading();
@@ -621,6 +617,7 @@ public class MainActivity extends AppCompatActivity
         } else {
             if (SUBLEVEL > 0 && SUBLEVEL < 5) {
                 getGroups(PROGRAM, YEAR, true);
+                setTitle(lastProgramName);
             } else {
                 super.onBackPressed();
             }
@@ -638,12 +635,9 @@ public class MainActivity extends AppCompatActivity
             builder.setMessage(R.string.addToCalendarQuestion);
             builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int id) {
-                    if(startD != 0 && endD != 0)
-                    {
+                    if (startD != 0 && endD != 0) {
                         pushToCalendar();
-                    }
-                    else
-                    {
+                    } else {
                         Toast.makeText(MainActivity.this, R.string.internet, Toast.LENGTH_SHORT).show();
                     }
 
@@ -844,7 +838,7 @@ public class MainActivity extends AppCompatActivity
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                Toast.makeText(MainActivity.this, error.toString(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, R.string.internet, Toast.LENGTH_SHORT).show();
             }
         });
         queue.add(sr);
@@ -1010,9 +1004,6 @@ public class MainActivity extends AppCompatActivity
         list.setMultiChoiceModeListener(new AbsListView.MultiChoiceModeListener() {
             @Override
             public void onItemCheckedStateChanged(ActionMode mode, int position, long id, boolean checked) {
-                if (position == lvPos && checked != lvPosChecked) {
-                    list.setItemChecked(position, true);
-                }
                 mode.setTitle(Integer.toString(list.getCheckedItemCount()));
             }
 
@@ -1236,6 +1227,35 @@ public class MainActivity extends AppCompatActivity
         Calendar now = Calendar.getInstance();
 
         now.setTimeInMillis(startD);
+        now.setFirstDayOfWeek(Calendar.MONDAY );
+
+        //Set the holding calendar variable
+        Calendar beginTime = Calendar.getInstance();
+
+        if(now.get(Calendar.DAY_OF_WEEK) != DAY_WEEK )
+        {
+            //Let's assume its Wednesday (2) and we need monday (0)
+            int diff = DAY_WEEK - now.get(Calendar.DAY_OF_WEEK);
+
+            if(diff < 0)
+            {
+                //We go back in time because the current day in week is bigger than the needed one
+                beginTime = now; //set it to current date
+                beginTime.add(Calendar.DAY_OF_MONTH, -diff);
+            }
+            else
+            {
+                //difference is lower than 0. Let's say it's WED (2) and we need Friday (4), diff=2
+                beginTime = now;
+                beginTime.add(Calendar.DAY_OF_MONTH, diff);
+            }
+        }
+        else
+        {
+            beginTime = now;
+        }
+/*
+
 
         int day = now.get(Calendar.DAY_OF_WEEK);
         int daym = now.get(Calendar.DAY_OF_MONTH);
@@ -1252,14 +1272,20 @@ public class MainActivity extends AppCompatActivity
         } else {
             start_day = daym;
         }
+*/
 
-
-        Calendar beginTime = Calendar.getInstance();
-        beginTime.set(year, month, start_day, hour_s, 0);
+        //EVENT DATA
+        /*Calendar beginTime = Calendar.getInstance();
+        beginTime.set(year, month, start_day, hour_s, 0);*/
+        //Set starting hour and minutes
+        beginTime.set(Calendar.HOUR_OF_DAY, hour_s);
+        beginTime.set(Calendar.MINUTE, 0);
         startMillis = beginTime.getTimeInMillis();
-        Calendar endTime = Calendar.getInstance();
-        endTime.set(year, month, start_day, hour_e, 0);
-        endMillis = endTime.getTimeInMillis();
+      //  Calendar endTime = Calendar.getInstance();
+       // endTime.set(year, month, start_day, hour_e, 0);
+        beginTime.set(Calendar.HOUR_OF_DAY, hour_e);
+        beginTime.set(Calendar.MINUTE, 0);
+        endMillis = beginTime.getTimeInMillis();
 
         DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd", Locale.getDefault());
         Calendar cal = Calendar.getInstance();
