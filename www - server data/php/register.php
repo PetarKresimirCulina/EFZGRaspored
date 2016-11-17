@@ -5,8 +5,8 @@
 	if($ENABLED == 1)
 	{
 		$servername = "localhost";
-		$username = "efzg_db";
-		$password = "bNJw[^OEb7AO";
+		$username = "fgsg";
+		$password = "gfsgs";
 	
 		// Create connection
 		$connection = new mysqli($servername, $username, $password);
