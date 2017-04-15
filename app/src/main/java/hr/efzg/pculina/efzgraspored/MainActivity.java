@@ -2,8 +2,10 @@ package hr.efzg.pculina.efzgraspored;
 
 import android.Manifest;
 import android.app.Dialog;
+import android.app.SearchManager;
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -24,6 +26,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
 import android.text.Html;
 import android.util.Log;
@@ -34,6 +37,7 @@ import android.view.MenuItem;
 import android.view.SubMenu;
 import android.view.View;
 import android.view.Window;
+import android.view.inputmethod.InputMethodManager;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.AbsListView;
@@ -67,6 +71,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TimeZone;
+import java.util.zip.Inflater;
 
 
 public class MainActivity extends AppCompatActivity
@@ -79,6 +84,7 @@ public class MainActivity extends AppCompatActivity
     private MainActivity CustomListView = null;
     private final ArrayList<ListModelGroups> CustomListViewValuesArr = new ArrayList<ListModelGroups>();
     private final ArrayList<ListModelSchedules> CustomListViewValuesArrSchedules = new ArrayList<>();
+    public static ArrayList<ListModelSearch> CustomSearchValues = new ArrayList<>();
     private int PROGRAM;
     private int YEAR;
     private int SUBLEVEL;
@@ -88,6 +94,7 @@ public class MainActivity extends AppCompatActivity
     private final String SERVER_GROUPS = SERVER_HOST + "get_groups.php";
     private final String SERVER_SCHEDULES = SERVER_HOST + "get_schedules.php";
     private final String SERVER_DURATION = SERVER_HOST + "get_duration.php";
+    private final String SERVER_ALL = SERVER_HOST + "get_all_for_search.php";
 
     private int[] prog_id;
     private int[] programs_id = new int[5];
@@ -106,13 +113,18 @@ public class MainActivity extends AppCompatActivity
     private RelativeLayout noInternet;
     private RelativeLayout noSchedule;
     private boolean showSync = true;
+    private boolean showSearch = false;
+
     private MenuItem addCalendar = null;
+    private MenuItem searchItem = null;
 
     public boolean ListSelectionInProgress = false;
     private long startD;
     private long endD;
     public String lastProgramName;
 
+
+    SearchAdapter adaptersearch;
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
      * See https://g.co/AppIndexing/AndroidStudio for more information.
@@ -170,19 +182,64 @@ public class MainActivity extends AppCompatActivity
 
     private void showSyncMenuItem(boolean val) {
         showSync = val;
+        showSearch = false;
         supportInvalidateOptionsMenu();
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+
+        if(showSearch) {
+            MenuInflater i = getMenuInflater();
+            i.inflate(R.menu.search, menu);
+            MenuItem searchItem = menu.findItem(R.id.action_search);
+            SearchManager searchManager = (SearchManager) this.getSystemService(Context.SEARCH_SERVICE);
+
+            SearchView searchView = null;
+
+            if (searchItem != null) {
+                searchView = (SearchView) searchItem.getActionView();
+            }
+            if (searchView != null) {
+                searchView.setQueryHint(getResources().getString(R.string.search));
+                searchView.setSearchableInfo(searchManager.getSearchableInfo(this.getComponentName()));
+
+                //final android.widget.Filter filter = adaptersearch.getFilter();
+
+                SearchView.OnQueryTextListener queryTextListener = new SearchView.OnQueryTextListener() {
+                    @Override
+                    public boolean onQueryTextChange(String newText) {
+                        adaptersearch.getFilter().filter(newText);
+                        return true;
+                    }
+
+                    @Override
+                    public boolean onQueryTextSubmit(String query) {
+                        adaptersearch.getFilter().filter(query);
+                        return true;
+                    }
+                };
+                searchView.setOnQueryTextListener(queryTextListener);
+                list.invalidateViews();
+            }
+        }
+
         if (showSync) {
             addCalendar = menu.add(Menu.NONE, 9999, Menu.NONE, R.string.addToCalendar).setIcon(R.drawable.ic_menu_calendar_white);
             addCalendar.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-        } else if (!showSync && addCalendar != null) {
+        } else if (!showSync && addCalendar != null) { // makni ovo kasnije u novim verzijama
             menu.removeItem(addCalendar.getItemId());
             addCalendar = null;
         }
+
         return true;
+    }
+
+    public void hideSoftKeyboard() {
+        if(getCurrentFocus()!=null) {
+            InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+        }
     }
 
     private void getGroups(final int programid, final int year, final boolean loadCached) {
@@ -422,7 +479,7 @@ public class MainActivity extends AppCompatActivity
                         c = 0;
                         for (int i = 0; i < list.getAdapter().getCount(); i++) {
                             if (list.isItemChecked(i)) {
-                                addToSchedule(i);
+                                addToSchedule(i, 0);
                                 c++;
                             }
                         }
@@ -483,6 +540,7 @@ public class MainActivity extends AppCompatActivity
 
                     for (int i = 0; i < sep.length; i++) {
                         String[] sep_si = sep[i].split("&");
+                        Log.d("entry", sep[i]);
 
                         prog_id[i] = i;
                         sep_si[0] = sep_si[0].trim();
@@ -605,7 +663,26 @@ public class MainActivity extends AppCompatActivity
                         return true;
                     }
                 });
+            } else if (name.toLowerCase().contains("stručni")) // fix stručni studij
+            {
+                final int i2 = i;
+                final int prog = prog_id;
+                mi.add("Stručni studij " + i).setIcon(R.drawable.ic_menu_calendar_red).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+
+                    @Override
+                    public boolean onMenuItemClick(MenuItem item) {
+                        setTitle(item.getTitle());
+                        showSyncMenuItem(false);
+                        noSchedule.setVisibility(View.INVISIBLE);
+                        getGroups(prog, i2, false);
+                        list.setVisibility(View.VISIBLE);
+                        ISVU.setVisibility(View.INVISIBLE);
+                        ISVU.loadUrl("about:blank");
+                        return true;
+                    }
+                });
             }
+
         }
     }
 
@@ -629,7 +706,7 @@ public class MainActivity extends AppCompatActivity
     public boolean onOptionsItemSelected(MenuItem item) {
         super.onOptionsItemSelected(item);
 
-        if (item.getItemId() == addCalendar.getItemId()) {
+        if (addCalendar != null && item.getItemId() == addCalendar.getItemId()) {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle(R.string.addToCalendarTitle);
             builder.setMessage(R.string.addToCalendarQuestion);
@@ -661,6 +738,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
         // Handle navigation view item clicks here.
+        hideSoftKeyboard();
         int id = item.getItemId();
 
         if (id == R.id.nav7) {
@@ -739,6 +817,11 @@ public class MainActivity extends AppCompatActivity
         } else if (id == R.id.nav3) {
             showSyncMenuItem(true);
             loadMySchedule();
+        } else if (id == R.id.nav4) {
+            showSyncMenuItem(false);
+            showSearch = true;
+            noSchedule.setVisibility(View.INVISIBLE);
+            loadAllSchedules();
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -760,26 +843,47 @@ public class MainActivity extends AppCompatActivity
         db.delete("Classes", "day" + "=" + b.getDay() + " and " + "units_in_day" + "=" + String.valueOf(b.getUnitsInDay()) + " and " + "course_name" + "='" + b.getCourseName() + "'", null);
     }
 
-    private void addToSchedule(int pos) {
-        ListModelSchedules a = CustomListViewValuesArrSchedules.get((Integer) list.getItemAtPosition(pos));
+    private void addToSchedule(int pos, int type) { //type 0 ListModelSchedules | type 1 ListModelSearch
 
         int day, units_in_day, duration, room_id, group_id, execution_type;
         String period, course_name, tutor_name, tutor_surname, tutor_code, room_name, group_name;
 
-        day = a.getDay();
-        units_in_day = a.getUnitsInDay();
-        duration = a.getDuration();
-        room_id = a.getRoomId();
-        group_id = a.getGroupId();
-        execution_type = a.getExecutionType();
+        if(type == 0) {
+            ListModelSchedules a = CustomListViewValuesArrSchedules.get((Integer) list.getItemAtPosition(pos));
 
-        period = a.getPeriod();
-        course_name = a.getCourseName();
-        tutor_name = a.getTutorName();
-        tutor_surname = a.getTutorSurname();
-        tutor_code = a.getTutorCode();
-        room_name = a.getRoomName();
-        group_name = a.getGroupName();
+            day = a.getDay();
+            units_in_day = a.getUnitsInDay();
+            duration = a.getDuration();
+            room_id = a.getRoomId();
+            group_id = a.getGroupId();
+            execution_type = a.getExecutionType();
+
+            period = a.getPeriod();
+            course_name = a.getCourseName();
+            tutor_name = a.getTutorName();
+            tutor_surname = a.getTutorSurname();
+            tutor_code = a.getTutorCode();
+            room_name = a.getRoomName();
+            group_name = a.getGroupName();
+        }
+        else {
+            ListModelSearch a = adaptersearch.getItemF(pos);
+
+            day = a.getDay();
+            units_in_day = a.getUnitsInDay();
+            duration = a.getDuration();
+            room_id = a.getRoomId();
+            group_id = a.getGroupId();
+            execution_type = a.getExecutionType();
+
+            period = a.getPeriod();
+            course_name = a.getCourseName();
+            tutor_name = a.getTutorName();
+            tutor_surname = a.getTutorSurname();
+            tutor_code = a.getTutorCode();
+            room_name = a.getRoomName();
+            group_name = a.getGroupName();
+        }
 
 
         SQLiteDatabase mydatabase = openOrCreateDatabase("MyScheduleDB", MODE_PRIVATE, null);
@@ -1039,7 +1143,7 @@ public class MainActivity extends AppCompatActivity
                         c = 0;
                         for (int i = 0; i < list.getAdapter().getCount(); i++) {
                             if (list.isItemChecked(i)) {
-                                addToSchedule(i);
+                                addToSchedule(i, 0);
                                 c++;
                             }
                         }
@@ -1365,6 +1469,245 @@ public class MainActivity extends AppCompatActivity
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         AppIndex.AppIndexApi.end(client, getIndexApiAction());
         client.disconnect();
+    }
+
+    public void loadAllSchedules() {
+        SUBLEVEL = 6;
+        CustomSearchValues.clear();
+//        list.notify();
+        list = (ListView) findViewById(R.id.listViewCustom);
+        list.setAdapter(null);
+
+
+        RequestQueue queue = Volley.newRequestQueue(this);
+        StringRequest sr = new StringRequest(Request.Method.POST, SERVER_ALL, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+
+                String sep[] = response.split("<>");
+
+                day = new int[sep.length];
+                units_in_day = new int[sep.length];
+                duration = new int[sep.length];
+                room_id = new int[sep.length];
+                group_id = new int[sep.length];
+                execution_type = new int[sep.length];
+
+                period = new String[sep.length];
+                course_name = new String[sep.length];
+                tutor_name = new String[sep.length];
+                tutor_surname = new String[sep.length];
+                tutor_code = new String[sep.length];
+                room_name = new String[sep.length];
+                group_name = new String[sep.length];
+
+                if (response.length() > 0) {
+                    for (int i = 0; i < sep.length; i++) {
+                        final ListModelSearch sched = new ListModelSearch();
+
+                        String[] sep_si = sep[i].split("&");
+
+                        if (!Objects.equals(sep_si[0], "") && sep_si[0].length() > 0)   // greška prilikom dohvata, php echo iz nekog razloga dodaje
+                        //prazna polja/znakove
+                        {
+                            sep_si[0] = sep_si[0].trim();
+                            day[i] = Integer.parseInt(sep_si[0]);
+                            sched.setDay(day[i]);
+
+                            units_in_day[i] = Integer.parseInt(sep_si[1]);
+                            sched.setUnitsInDay(units_in_day[i]);
+
+                            duration[i] = Integer.parseInt(sep_si[2]);
+                            sched.setDuration(duration[i]);
+
+                            room_id[i] = Integer.parseInt(sep_si[3]);
+                            sched.setRoomId(room_id[i]);
+
+                            period[i] = sep_si[4];
+                            sched.setPeriod(period[i]);
+
+                            group_id[i] = Integer.parseInt(sep_si[5]);
+                            sched.setGroupId(group_id[i]);
+
+                            course_name[i] = sep_si[6];
+                            sched.setCourseName(course_name[i]);
+
+                            execution_type[i] = Integer.parseInt(sep_si[7]);
+                            sched.setExecutionType(execution_type[i]);
+
+                            tutor_name[i] = sep_si[8];
+                            sched.setTutorName(tutor_name[i]);
+
+                            tutor_surname[i] = sep_si[9];
+                            sched.setTutorSurname(tutor_surname[i]);
+
+                            tutor_code[i] = sep_si[10];
+                            sched.setTutorCode(tutor_code[i]);
+
+                            room_name[i] = sep_si[11];
+                            sched.setRoomName(room_name[i]);
+
+                            group_name[i] = sep_si[12];
+                            if (!Objects.equals(group_name[i], "null")) {
+                                group_name[i] = group_name[i].replaceAll("(?i)(?<=[0-9])_(?=[A-Z])", " ");
+                                sched.setGroupName(group_name[i]);
+                            } else {
+                                sched.setGroupName("null");
+                            }
+
+
+                            CustomSearchValues.add(sched);
+                        }
+
+
+                    }
+
+                    Resources res = getResources();
+                    CustomListView = MainActivity.this;
+                    list = (ListView) findViewById(R.id.listViewCustom);
+
+                    Collections.sort(CustomSearchValues, new Comparator<ListModelSearch>() {
+
+                        @Override
+                        public int compare(ListModelSearch lhs, ListModelSearch rhs) {
+                            int result = Integer.compare(lhs.getDay(), rhs.getDay());
+                            if (result == 0) {
+                                result = Integer.compare(lhs.getUnitsInDay(), rhs.getUnitsInDay());
+                            }
+                            return result;
+                        }
+                    });
+
+
+                    adaptersearch = new SearchAdapter(CustomListView, CustomSearchValues, res);
+                    list.setAdapter(adaptersearch);
+
+
+                    hideLoading();
+                } else {
+                    list.setAdapter(null);
+                    hideLoading();
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                if (SUBLEVEL == 6) {
+                    hideLoading();
+                    list.setVisibility(View.INVISIBLE);
+                    ISVU.setVisibility(View.INVISIBLE);
+                    noInternet.setVisibility(View.VISIBLE);
+                    Button retry = (Button) findViewById(R.id.noInternetBtn);
+
+                    retry.setOnClickListener(new View.OnClickListener() {
+
+                        @Override
+                        public void onClick(View v) {
+                            noInternet.setVisibility(View.INVISIBLE);
+                            list.setVisibility(View.VISIBLE);
+                            loadAllSchedules();
+                        }
+                    });
+                }
+            }
+        }) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+
+                return params;
+            }
+
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                //params.put("Content-Type", "application/x-www-form-urlencoded");
+                return new HashMap<>();
+            }
+        };
+        showLoading();
+        queue.add(sr);
+
+
+        list.setMultiChoiceModeListener(new AbsListView.MultiChoiceModeListener() {
+            @Override
+            public void onItemCheckedStateChanged(ActionMode mode, int position, long id, boolean checked) {
+                mode.setTitle(Integer.toString(list.getCheckedItemCount()));
+            }
+
+            @Override
+            public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+                ListSelectionInProgress = true;
+                MenuInflater inflater = mode.getMenuInflater();
+                if (SUBLEVEL == 6) { // search ssatnicu
+                    inflater.inflate(R.menu.action_mode_add, menu);
+                } else if (SUBLEVEL == 5) // SATNICA
+                {
+                    inflater.inflate(R.menu.action_mode_remove, menu);
+                }
+
+                return true;
+            }
+
+            @Override
+            public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+                return false;
+            }
+
+            @Override
+            public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+                int c;
+                switch (item.getItemId()) {
+                    case R.id.selAll:
+                        for (int i = 0; i < list.getAdapter().getCount(); i++) {
+                            list.setItemChecked(i, true);
+                        }
+                        break;
+                    case R.id.addSch:
+                        c = 0;
+                        Log.d("list adapter size", String.valueOf(list.getAdapter().getCount()));
+                        for (int i = 0; i < list.getAdapter().getCount(); i++) {
+                            if (list.isItemChecked(i)) {
+                                addToSchedule(i, 1);
+                                c++;
+                            }
+                        }
+                        if (c > 1) {
+                            Toast.makeText(MainActivity.this, R.string.addToMyScheduleSuccessPlural, Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(MainActivity.this, R.string.addToMyScheduleSuccess, Toast.LENGTH_SHORT).show();
+                        }
+                        mode.finish();
+                        break;
+                    case R.id.remSch:
+                        c = 0;
+                        if (list.getAdapter() != null) {
+                            for (int i = 0; i < list.getAdapter().getCount(); i++) {
+                                if (list.isItemChecked(i)) {
+                                    removeFromSchedule(i);
+                                    c++;
+                                }
+                            }
+                            if (c > 1) {
+                                Toast.makeText(MainActivity.this, R.string.removeFromMyScheduleSuccessPlural, Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(MainActivity.this, R.string.removeFromMyScheduleSuccess, Toast.LENGTH_SHORT).show();
+                            }
+                            loadMySchedule();
+                            mode.finish();
+                        }
+
+                        break;
+                }
+
+                return false;
+            }
+
+            @Override
+            public void onDestroyActionMode(ActionMode mode) {
+                ListSelectionInProgress = false;
+            }
+        });
+        setTitle(R.string.navCat4);
     }
 }
 

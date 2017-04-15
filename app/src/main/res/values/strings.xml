@@ -9,6 +9,8 @@
     <string name="navURL">www.efzg.hr</string>
 
     <string name="navCat3">Moja satnica</string>
+    <string name="navCat4">Pretraga kolegija</string>
+    <string name="search">Kolegij, predavač ili dvorana</string>
     <string name="navCat5">Studomat (ISVU)</string>
     <string name="navCat7">O aplikaciji</string>
     <string name="none">none</string>

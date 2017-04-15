@@ -1,6 +1,8 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="80dp"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="5dp"
+    android:layout_marginTop="5dp"
     android:background="@drawable/list_row"
     android:descendantFocusability="blocksDescendants"
     android:elevation="2dp"
@@ -48,7 +50,8 @@
             android:layout_alignParentTop="true"
             android:text="10"
             android:textAppearance="?android:attr/textAppearanceLarge"
-            android:textColor="@color/colorLV3Dark" />
+            android:textColor="@color/colorLV3Dark"
+            android:textSize="24sp" />
 
         <TextView
             android:id="@+id/timeTo"
@@ -58,7 +61,8 @@
             android:text="12"
             android:textAppearance="?android:attr/textAppearanceLarge"
             android:textColor="@color/colorLV3Dark"
-            android:textIsSelectable="false" />
+            android:textIsSelectable="false"
+            android:textSize="24sp" />
     </RelativeLayout>
 
     <RelativeLayout
@@ -76,7 +80,8 @@
             android:layout_marginEnd="10dp"
             android:text="Analiza financijskih izvještaja"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textColor="@color/colorLV3Dark" />
+            android:textColor="@color/colorLV3Dark"
+            android:textSize="16sp" />
 
         <TextView
             android:id="@+id/classTutor"
@@ -86,7 +91,8 @@
             android:focusableInTouchMode="false"
             android:text="prof. dr. sc. Ivan Ivić"
             android:textAppearance="?android:attr/textAppearanceSmall"
-            android:textColor="@color/colorLV3" />
+            android:textColor="@color/colorLV3"
+            android:textSize="14sp" />
 
         <TextView
             android:id="@+id/classTypePlace"
@@ -97,7 +103,7 @@
             android:textAppearance="?android:attr/textAppearanceSmall"
             android:textColor="@color/colorLV3"
             android:textIsSelectable="false"
-            android:textSize="12sp" />
+            android:textSize="10sp" />
 
         <TextView
             android:id="@+id/classDate"
@@ -110,7 +116,7 @@
             android:text="Datum: 5.10.-25.1."
             android:textAppearance="?android:attr/textAppearanceSmall"
             android:textColor="@color/colorLV3"
-            android:textSize="12sp" />
+            android:textSize="10sp" />
     </RelativeLayout>
 
 </RelativeLayout>

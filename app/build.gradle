@@ -2,14 +2,14 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 23
-    buildToolsVersion "23.0.3"
+    buildToolsVersion '25.0.0'
 
     defaultConfig {
         applicationId "hr.efzg.pculina.efzgraspored"
         minSdkVersion 21
         targetSdkVersion 23
-        versionCode 258
-        versionName "2.5.8"
+        versionCode 300
+        versionName "3.0.0"
     }
     buildTypes {
         release {
