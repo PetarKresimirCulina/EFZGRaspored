@@ -260,6 +260,8 @@ public class MainActivity extends AppCompatActivity
         }
 
         queue = Volley.newRequestQueue(this);
+        queue.getCache().clear();
+
         sr = new StringRequest(Request.Method.POST, SERVER_GROUPS, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
@@ -615,7 +617,7 @@ public class MainActivity extends AppCompatActivity
         }
         // DODAJ VRIJEDNOSTI PODIZBORNICIMA
         for (int i = 1; i <= years; i++) {
-            if (!name.toLowerCase().contains("izborni") && !name.toLowerCase().contains("diplomski") && !name.toLowerCase().contains("stručni")) // fix za izborne PE i diplomski TE JE STRUČNI IZBAČEN
+            if (!name.toLowerCase().contains("izborni") && !name.toLowerCase().contains("diplomski") && !name.toLowerCase().contains("stručni") && !name.toLowerCase().contains("integrirani")) // fix za izborne PE i diplomski TE JE STRUČNI IZBAČEN
             {
                 final int i2 = i;
                 final int prog = prog_id;
@@ -651,11 +653,11 @@ public class MainActivity extends AppCompatActivity
                         return true;
                     }
                 });
-            } else if (name.toLowerCase().contains("izborni") && i == 4 && !name.toLowerCase().contains("stručni")) // fix izborni pe
+            } else if (name.toLowerCase().contains("izborni") && i == 4 && !name.toLowerCase().contains("stručni")&& !name.toLowerCase().contains("integrirani")) // fix izborni pe
             {
                 final int i2 = i;
                 final int prog = prog_id;
-                mi.add("Izborni predmeti").setIcon(R.drawable.ic_menu_calendar_red).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+                mi.add("Izborni kolegiji").setIcon(R.drawable.ic_menu_calendar_red).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
 
                     @Override
                     public boolean onMenuItemClick(MenuItem item) {
@@ -669,11 +671,29 @@ public class MainActivity extends AppCompatActivity
                         return true;
                     }
                 });
-            } else if (name.toLowerCase().contains("stručni")) // fix stručni studij
+            } else if (name.toLowerCase().contains("integrirani - izborni") && i == 3 && !name.toLowerCase().contains("stručni")) // fix izborni INTEGRIRANI
             {
                 final int i2 = i;
                 final int prog = prog_id;
-                mi.add("Stručni studij " + i).setIcon(R.drawable.ic_menu_calendar_red).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+                mi.add("Izborni kolegiji").setIcon(R.drawable.ic_menu_calendar_red).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+
+                    @Override
+                    public boolean onMenuItemClick(MenuItem item) {
+                        setTitle(item.getTitle());
+                        showSyncMenuItem(false);
+                        noSchedule.setVisibility(View.INVISIBLE);
+                        getGroups(prog, i2, false);
+                        list.setVisibility(View.VISIBLE);
+                        ISVU.setVisibility(View.INVISIBLE);
+                        ISVU.loadUrl("about:blank");
+                        return true;
+                    }
+                });
+            } else if (name.toLowerCase().contains("stručni") && i < 4) // fix stručni studij - max 3 godine!
+            {
+                final int i2 = i;
+                final int prog = prog_id;
+                mi.add(i + ". godina").setIcon(R.drawable.ic_menu_calendar_red).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
 
                     @Override
                     public boolean onMenuItemClick(MenuItem item) {
