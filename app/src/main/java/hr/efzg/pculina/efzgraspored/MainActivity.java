@@ -244,6 +244,9 @@ public class MainActivity extends AppCompatActivity
 
     private void getGroups(final int programid, final int year, final boolean loadCached) {
 
+        Log.d("programID", String.valueOf(programid));
+        Log.d("year", String.valueOf(year));
+
         RequestQueue queue;
         StringRequest sr;
         list.setAdapter(null);
@@ -262,6 +265,7 @@ public class MainActivity extends AppCompatActivity
             public void onResponse(String response) {
                 String sep[] = response.split("<>");
 
+                Log.d("getGrPerYr", response);
                 groups_id = new int[sep.length];
                 group_name = new String[sep.length];
                 parent_id = new int[sep.length];
@@ -529,6 +533,8 @@ public class MainActivity extends AppCompatActivity
         StringRequest sr = new StringRequest(Request.Method.POST, SERVER_PROGRAMS, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
+
+                Log.d("RESPONSE", response.toString());
                 String sep[] = response.split("<>");
 
                 try {
@@ -601,7 +607,7 @@ public class MainActivity extends AppCompatActivity
         NavigationView nav = (NavigationView) findViewById(R.id.nav_view);
         Menu m = nav.getMenu();
 
-        SubMenu mi; // PRVO DODAJ GLAVE PODIZBORNIKE
+        SubMenu mi; // PRVO DODAJ GLAVNE PODIZBORNIKE
         if (name.toLowerCase().contains("izborni")) {
             mi = m.addSubMenu(prog_id, id, 99, name);
         } else {

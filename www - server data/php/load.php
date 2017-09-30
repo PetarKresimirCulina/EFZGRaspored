@@ -22,7 +22,6 @@
 	include 'loadSchedules.php';
 	include 'loadDuration.php';
 	
-	
 	$startC = time();
 
 	$tmpFile = $_SESSION["xmlfile"];
@@ -72,5 +71,5 @@
 	$diff = ($endC - $startC);
 	
 	echo "\n\r" . 'Finished in ' . $diff . 's';
-	
+
 ?>

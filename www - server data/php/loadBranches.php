@@ -7,7 +7,12 @@
 		{
 			$id = $connection->real_escape_string($item->attributes()->id);
 			$name = $connection->real_escape_string($item->attributes()->name);
+			
 			$code = $connection->real_escape_string($item->attributes()->code);
+			
+			if(empty($code)) { $code = "NULL"; }
+			echo $code;
+			
 			$year = $connection->real_escape_string($item->attributes()->year);
 			$program_id = $connection->real_escape_string($item->attributes()->program_id);
 			
