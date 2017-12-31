@@ -1,6 +1,7 @@
 package hr.efzg.pculina.efzgraspored;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.app.SearchManager;
 import android.content.ContentResolver;
@@ -8,6 +9,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.database.Cursor;
@@ -18,6 +20,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.CalendarContract;
 import android.provider.CalendarContract.Events;
+import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -55,10 +58,11 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
-import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
-import com.google.android.gms.appindexing.Thing;
 import com.google.android.gms.common.api.GoogleApiClient;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -71,30 +75,23 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TimeZone;
-import java.util.zip.Inflater;
 
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
-
     ListView list;
     private GroupsAdapter adapter;
     private SchedulesAdapter adapterschedules;
     private MainActivity CustomListView = null;
-    private final ArrayList<ListModelGroups> CustomListViewValuesArr = new ArrayList<ListModelGroups>();
+    private final ArrayList<ListModelGroups> CustomListViewValuesArr = new ArrayList<>();
     private final ArrayList<ListModelSchedules> CustomListViewValuesArrSchedules = new ArrayList<>();
     public static ArrayList<ListModelSearch> CustomSearchValues = new ArrayList<>();
     private int PROGRAM;
     private int YEAR;
     private int SUBLEVEL;
 
-    private final String SERVER_HOST = "http://efzg.pkculina.com/php/api/";
-    private final String SERVER_PROGRAMS = SERVER_HOST + "android_fetch_data.php";
-    private final String SERVER_GROUPS = SERVER_HOST + "get_groups.php";
-    private final String SERVER_SCHEDULES = SERVER_HOST + "get_schedules.php";
-    private final String SERVER_DURATION = SERVER_HOST + "get_duration.php";
-    private final String SERVER_ALL = SERVER_HOST + "get_all_for_search.php";
+    private final String SERVER_HOST = "http://192.168.1.69:5000/api/v1";
 
     private int[] prog_id;
     private int[] programs_id = new int[5];
@@ -123,61 +120,57 @@ public class MainActivity extends AppCompatActivity
     private long endD;
     public String lastProgramName;
 
-
     SearchAdapter adaptersearch;
-    /**
-     * ATTENTION: This was auto-generated to implement the App Indexing API.
-     * See https://g.co/AppIndexing/AndroidStudio for more information.
-     */
-    private GoogleApiClient client;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.addDrawerListener(toggle);
         toggle.syncState();
 
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        NavigationView navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
         View header = navigationView.getHeaderView(0);
-        TextView titleText = (TextView) header.findViewById(R.id.navTitle);
+        TextView titleText = header.findViewById(R.id.navTitle);
         titleText.setText(Html.fromHtml(getString(R.string.navTitle)));
 
         navigationView.setItemIconTintList(null);
-        loading = (ProgressBar) findViewById(R.id.progressBarLoading);
+        loading = findViewById(R.id.progressBarLoading);
         loading.getIndeterminateDrawable().setColorFilter(
                 ContextCompat.getColor(this, R.color.colorLV3),
                 PorterDuff.Mode.SRC_IN);
 
-        ISVU = (WebView) findViewById(R.id.isvuWeb);
+        ISVU = findViewById(R.id.isvuWeb);
         ISVU.setVisibility(View.INVISIBLE);
         ISVU.setFocusable(true);
         ISVU.setFocusableInTouchMode(true);
 
-        noInternet = (RelativeLayout) findViewById(R.id.noInternet);
+        noInternet = findViewById(R.id.noInternet);
         noInternet.setVisibility(View.INVISIBLE);
-        noSchedule = (RelativeLayout) findViewById(R.id.MyScheduleEmpty);
+        noSchedule = findViewById(R.id.MyScheduleEmpty);
         noSchedule.setVisibility(View.INVISIBLE);
-        list = (ListView) findViewById(R.id.listViewCustom);
+
+        list = findViewById(R.id.listViewCustom);
         list.setDivider(null);
+
+        SharedPreferences durationSP = getSharedPreferences("durationSP", 0);
+        if (durationSP != null) {
+            startD = durationSP.getLong("startD", 0);
+            endD = durationSP.getLong("endD", 0);
+        }
+
         loadMenuItems();
-        //    registerForContextMenu(list);
         showSyncMenuItem(true);
         loadDuration();
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
-
-
     }
 
     private void showSyncMenuItem(boolean val) {
@@ -189,7 +182,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
 
-        if(showSearch) {
+        if (showSearch) {
             MenuInflater i = getMenuInflater();
             i.inflate(R.menu.search, menu);
             MenuItem searchItem = menu.findItem(R.id.action_search);
@@ -202,9 +195,8 @@ public class MainActivity extends AppCompatActivity
             }
             if (searchView != null) {
                 searchView.setQueryHint(getResources().getString(R.string.search));
+                assert searchManager != null;
                 searchView.setSearchableInfo(searchManager.getSearchableInfo(this.getComponentName()));
-
-                //final android.widget.Filter filter = adaptersearch.getFilter();
 
                 SearchView.OnQueryTextListener queryTextListener = new SearchView.OnQueryTextListener() {
                     @Override
@@ -226,26 +218,21 @@ public class MainActivity extends AppCompatActivity
 
         if (showSync) {
             addCalendar = menu.add(Menu.NONE, 9999, Menu.NONE, R.string.addToCalendar).setIcon(R.drawable.ic_menu_calendar_white);
-            addCalendar.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-        } else if (!showSync && addCalendar != null) { // makni ovo kasnije u novim verzijama
-            menu.removeItem(addCalendar.getItemId());
-            addCalendar = null;
+            addCalendar.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
         }
 
         return true;
     }
 
     public void hideSoftKeyboard() {
-        if(getCurrentFocus()!=null) {
+        if (getCurrentFocus() != null) {
             InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            assert inputMethodManager != null;
             inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
         }
     }
 
     private void getGroups(final int programid, final int year, final boolean loadCached) {
-
-        Log.d("programID", String.valueOf(programid));
-        Log.d("year", String.valueOf(year));
 
         RequestQueue queue;
         StringRequest sr;
@@ -262,28 +249,27 @@ public class MainActivity extends AppCompatActivity
         queue = Volley.newRequestQueue(this);
         queue.getCache().clear();
 
+        String SERVER_GROUPS = SERVER_HOST + "/groups";
         sr = new StringRequest(Request.Method.POST, SERVER_GROUPS, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
-                String sep[] = response.split("<>");
+                try {
+                    JSONArray responseJson = new JSONArray(response);
 
-                Log.d("getGrPerYr", response);
-                groups_id = new int[sep.length];
-                group_name = new String[sep.length];
-                parent_id = new int[sep.length];
+                    groups_id = new int[response.length()];
+                    group_name = new String[response.length()];
+                    parent_id = new int[response.length()];
 
-                for (int i = 0; i < sep.length; i++) {
-                    final ListModelGroups sched = new ListModelGroups();
+                    for (int i = 0; i < responseJson.length(); i++) {
 
-                    String[] sep_si = sep[i].split("&");
+                        final ListModelGroups sched = new ListModelGroups();
+                        JSONObject responseObject = responseJson.getJSONObject(i);
 
-                    if (sep_si[0].length() > 0) {
-                        sep_si[0] = sep_si[0].trim();
-                        groups_id[i] = Integer.parseInt(sep_si[0]);
-                        group_name[i] = sep_si[1];
-                        parent_id[i] = Integer.parseInt(sep_si[2]);
+                        groups_id[i] = responseObject.getInt("id");
+                        group_name[i] = responseObject.getString("name");
+                        parent_id[i] = responseObject.getInt("parent_id");
 
-                        if (parent_id[i] == groups_id[i] && !group_name[i].toLowerCase().contains("dodatna")) {
+                        if (parent_id[i] == 0 & !group_name[i].toLowerCase().contains("dodatna")) {
                             sched.setGroupName(group_name[i]);
                             sched.setID(groups_id[i]);
                             sched.setParentID(groups_id[i]);
@@ -291,33 +277,38 @@ public class MainActivity extends AppCompatActivity
                             CustomListViewValuesArr.add(sched);
                         }
                     }
+
+                    Resources res = getResources();
+                    CustomListView = MainActivity.this;
+
+                    /*
+                    // TO DO - Makni u buducnosti nakon sto se sve sredi
+                    if (programid == 1 && year == 4) // fix za izborne predmete na 3. i 4. godini - abecedni red
+                            {
+                                Collections.sort(CustomListViewValuesArr, new Comparator<ListModelGroups>() {
+                            @Override
+                            public int compare(ListModelGroups lhs, ListModelGroups rhs) {
+                                return lhs.getGroupName().compareToIgnoreCase(rhs.getGroupName());
+                            }
+                        });
+                    }
+                    */
+
+                    adapter = new GroupsAdapter(CustomListView, CustomListViewValuesArr, res);
+
+                    if (CustomListViewValuesArr.size() > 0) {
+                        list.setAdapter(adapter);
+                    } else {
+                        list.setAdapter(null);
+                    }
+
+                    hideLoading();
+
+                } catch (Exception e) {
+                    Toast.makeText(MainActivity.this, R.string.unhandledException, Toast.LENGTH_SHORT).show();
+                    Log.d("exception", e.toString());
+                    hideLoading();
                 }
-
-                Resources res = getResources();
-                CustomListView = MainActivity.this;
-                //list = (ListView) findViewById(R.id.listViewCustom);
-
-                if (programid == 1 && year == 4) // fix za izborne predmete na 3. i 4. godini - abecedni red
-                {
-                    Collections.sort(CustomListViewValuesArr, new Comparator<ListModelGroups>() {
-                        @Override
-                        public int compare(ListModelGroups lhs, ListModelGroups rhs) {
-                            return lhs.getGroupName().compareToIgnoreCase(rhs.getGroupName());
-                        }
-                    });
-                }
-
-                adapter = new GroupsAdapter(CustomListView, CustomListViewValuesArr, res);
-
-                if (CustomListViewValuesArr.size() > 0) {
-                    list.setAdapter(adapter);
-                } else {
-                    list.setAdapter(null);
-                }
-
-                hideLoading();
-
-
             }
         }, new Response.ErrorListener() {
             @Override
@@ -326,7 +317,7 @@ public class MainActivity extends AppCompatActivity
                 list.setVisibility(View.INVISIBLE);
                 ISVU.setVisibility(View.INVISIBLE);
                 noInternet.setVisibility(View.VISIBLE);
-                Button retry = (Button) findViewById(R.id.noInternetBtn);
+                Button retry = findViewById(R.id.noInternetBtn);
 
                 retry.setOnClickListener(new View.OnClickListener() {
 
@@ -342,7 +333,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             protected Map<String, String> getParams() {
                 Map<String, String> params = new HashMap<>();
-                params.put("programid", String.valueOf(programid));
+                params.put("program_id", String.valueOf(programid));
                 params.put("year", String.valueOf(year));
 
                 return params;
@@ -358,14 +349,13 @@ public class MainActivity extends AppCompatActivity
         if (!loadCached) {
             queue.add(sr);
         } else {
-            list = (ListView) findViewById(R.id.listViewCustom);
+            list = findViewById(R.id.listViewCustom);
             adapter = new GroupsAdapter(CustomListView, CustomListViewValuesArr, getResources());
             list.setAdapter(adapter);
             hideLoading();
         }
 
-
-        DrawerLayout d = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout d = findViewById(R.id.drawer_layout);
         d.closeDrawers();
     }
 
@@ -391,7 +381,6 @@ public class MainActivity extends AppCompatActivity
 
         String selectQuery = "SELECT * FROM Classes";
         Cursor c = mydatabase.rawQuery(selectQuery, null);
-
 
         ISVU.setVisibility(View.INVISIBLE);
 
@@ -454,7 +443,6 @@ public class MainActivity extends AppCompatActivity
 
             @Override
             public boolean onCreateActionMode(ActionMode mode, Menu menu) {
-                Log.d("Called", "true");
                 MenuInflater inflater = mode.getMenuInflater();
                 if (SUBLEVEL == 1) {
                     inflater.inflate(R.menu.action_mode_add, menu);
@@ -513,10 +501,8 @@ public class MainActivity extends AppCompatActivity
                             loadMySchedule();
                             mode.finish();
                         }
-
                         break;
                 }
-
                 return false;
             }
 
@@ -532,29 +518,26 @@ public class MainActivity extends AppCompatActivity
     @SuppressWarnings("WeakerAccess")
     private void loadMenuItems() {
         RequestQueue queue = Volley.newRequestQueue(this);
+        String SERVER_PROGRAMS = SERVER_HOST + "/programs";
         StringRequest sr = new StringRequest(Request.Method.POST, SERVER_PROGRAMS, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
 
-                Log.d("RESPONSE", response.toString());
-                String sep[] = response.split("<>");
-
                 try {
-                    prog_id = new int[sep.length];
-                    programs_id = new int[sep.length];
-                    programs_name = new String[sep.length];
-                    programs_years = new int[sep.length];
+                    JSONArray responseJson = new JSONArray(response);
 
+                    prog_id = new int[responseJson.length()];
+                    programs_id = new int[responseJson.length()];
+                    programs_name = new String[responseJson.length()];
+                    programs_years = new int[responseJson.length()];
 
-                    for (int i = 0; i < sep.length; i++) {
-                        String[] sep_si = sep[i].split("&");
-                        Log.d("entry", sep[i]);
+                    for (int i = 0; i < responseJson.length(); i++) {
+                        JSONObject responseObject = responseJson.getJSONObject(i);
 
                         prog_id[i] = i;
-                        sep_si[0] = sep_si[0].trim();
-                        programs_id[i] = Integer.parseInt(sep_si[0]);
-                        programs_name[i] = sep_si[1];
-                        programs_years[i] = Integer.parseInt(sep_si[2]);
+                        programs_id[i] = responseObject.getInt("id");
+                        programs_name[i] = responseObject.getString("name");
+                        programs_years[i] = responseObject.getInt("years");
 
                         createSubMenus(prog_id[i], programs_id[i], programs_name[i], programs_years[i]);
                     }
@@ -572,7 +555,7 @@ public class MainActivity extends AppCompatActivity
                     list.setVisibility(View.INVISIBLE);
                     ISVU.setVisibility(View.INVISIBLE);
                     noInternet.setVisibility(View.VISIBLE);
-                    Button retry = (Button) findViewById(R.id.noInternetBtn);
+                    Button retry = findViewById(R.id.noInternetBtn);
 
                     retry.setOnClickListener(new View.OnClickListener() {
 
@@ -606,7 +589,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void createSubMenus(int id, int prog_id, final String name, int years) {
-        NavigationView nav = (NavigationView) findViewById(R.id.nav_view);
+        NavigationView nav = findViewById(R.id.nav_view);
         Menu m = nav.getMenu();
 
         SubMenu mi; // PRVO DODAJ GLAVNE PODIZBORNIKE
@@ -617,7 +600,7 @@ public class MainActivity extends AppCompatActivity
         }
         // DODAJ VRIJEDNOSTI PODIZBORNICIMA
         for (int i = 1; i <= years; i++) {
-            if (!name.toLowerCase().contains("izborni") && !name.toLowerCase().contains("diplomski") && !name.toLowerCase().contains("stručni") && !name.toLowerCase().contains("integrirani")) // fix za izborne PE i diplomski TE JE STRUČNI IZBAČEN
+            if (!name.toLowerCase().contains("izborni") && !name.toLowerCase().contains("diplomski") && !name.toLowerCase().contains("stručni") && !name.toLowerCase().contains("strucni") && !name.toLowerCase().contains("integrirani")) // fix za izborne PE i diplomski TE JE STRUČNI IZBAČEN
             {
                 final int i2 = i;
                 final int prog = prog_id;
@@ -635,7 +618,7 @@ public class MainActivity extends AppCompatActivity
                         return true;
                     }
                 });
-            } else if (name.toLowerCase().contains("diplomski") && i == 5 && !name.toLowerCase().contains("stručni")) // fix za diplomski
+            } else if (name.toLowerCase().contains("diplomski") && i == 5 && !name.toLowerCase().contains("stručni") && !name.toLowerCase().contains("strucni")) // fix za diplomski
             {
                 final int i2 = i;
                 final int prog = prog_id;
@@ -653,7 +636,7 @@ public class MainActivity extends AppCompatActivity
                         return true;
                     }
                 });
-            } else if (name.toLowerCase().contains("izborni") && i == 4 && !name.toLowerCase().contains("stručni")&& !name.toLowerCase().contains("integrirani")) // fix izborni pe
+            } else if (name.toLowerCase().contains("izborni") && i == 4 && !name.toLowerCase().contains("stručni") && !name.toLowerCase().contains("strucni") && !name.toLowerCase().contains("integrirani")) // fix izborni pe
             {
                 final int i2 = i;
                 final int prog = prog_id;
@@ -671,7 +654,7 @@ public class MainActivity extends AppCompatActivity
                         return true;
                     }
                 });
-            } else if (name.toLowerCase().contains("integrirani - izborni") && i == 3 && !name.toLowerCase().contains("stručni")) // fix izborni INTEGRIRANI
+            } else if (name.toLowerCase().contains("integrirani - izborni") && i == 3 && !name.toLowerCase().contains("stručni") && !name.toLowerCase().contains("strucni")) // fix izborni INTEGRIRANI
             {
                 final int i2 = i;
                 final int prog = prog_id;
@@ -689,7 +672,7 @@ public class MainActivity extends AppCompatActivity
                         return true;
                     }
                 });
-            } else if (name.toLowerCase().contains("stručni") && i < 4) // fix stručni studij - max 3 godine!
+            } else if ((name.toLowerCase().contains("stručni") || name.toLowerCase().contains("strucni")) && i < 4) // fix stručni studij - max 3 godine!
             {
                 final int i2 = i;
                 final int prog = prog_id;
@@ -708,13 +691,12 @@ public class MainActivity extends AppCompatActivity
                     }
                 });
             }
-
         }
     }
 
     @Override
     public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
@@ -724,7 +706,6 @@ public class MainActivity extends AppCompatActivity
             } else {
                 super.onBackPressed();
             }
-
         }
     }
 
@@ -733,7 +714,7 @@ public class MainActivity extends AppCompatActivity
         super.onOptionsItemSelected(item);
 
         if (addCalendar != null && item.getItemId() == addCalendar.getItemId()) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AlertDialogTheme);
             builder.setTitle(R.string.addToCalendarTitle);
             builder.setMessage(R.string.addToCalendarQuestion);
             builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
@@ -743,26 +724,24 @@ public class MainActivity extends AppCompatActivity
                     } else {
                         Toast.makeText(MainActivity.this, R.string.internet, Toast.LENGTH_SHORT).show();
                     }
-
                     dialog.dismiss();
                 }
             });
             builder.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int id) {
-                    //TODO
                     dialog.dismiss();
                 }
             });
             AlertDialog dialog = builder.create();
             dialog.show();
-
         }
         return false;
     }
 
+    @SuppressLint("SetJavaScriptEnabled")
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
+    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         // Handle navigation view item clicks here.
         hideSoftKeyboard();
         int id = item.getItemId();
@@ -772,12 +751,12 @@ public class MainActivity extends AppCompatActivity
             dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
             dialog.setContentView(R.layout.about_dialog);
 
-            TextView abouttv = (TextView) dialog.findViewById(R.id.aboutDetail);
+            TextView abouttv = dialog.findViewById(R.id.aboutDetail);
             String about = abouttv.getText() + " " + BuildConfig.VERSION_NAME;
             abouttv.setText(about);
 
-            Button btnClose = (Button) dialog.findViewById(R.id.dialogClose);
-            TextView legal = (TextView) dialog.findViewById(R.id.legalLink);
+            Button btnClose = dialog.findViewById(R.id.dialogClose);
+            TextView legal = dialog.findViewById(R.id.legalLink);
             btnClose.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -794,7 +773,7 @@ public class MainActivity extends AppCompatActivity
                     dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
                     dialog.setContentView(R.layout.legal_dialog);
 
-                    Button btnClose = (Button) dialog.findViewById(R.id.dialogClose);
+                    Button btnClose = dialog.findViewById(R.id.dialogClose);
 
                     btnClose.setOnClickListener(new View.OnClickListener() {
                         @Override
@@ -806,13 +785,13 @@ public class MainActivity extends AppCompatActivity
                 }
             });
 
-            TextView clientLink = (TextView) dialog.findViewById(R.id.clientLink);
-            TextView devLink = (TextView) dialog.findViewById(R.id.devLink);
+            TextView clientLink = dialog.findViewById(R.id.clientLink);
+            TextView devLink = dialog.findViewById(R.id.devLink);
 
             clientLink.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.efzg.hr"));
+                    Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.efzg.unizg.hr/"));
                     startActivity(browserIntent);
                 }
             });
@@ -850,7 +829,7 @@ public class MainActivity extends AppCompatActivity
             loadAllSchedules();
         }
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
@@ -867,6 +846,7 @@ public class MainActivity extends AppCompatActivity
         SQLiteDatabase db = openOrCreateDatabase("MyScheduleDB", MODE_PRIVATE, null);
         ListModelSchedules b = CustomListViewValuesArrSchedules.get((Integer) list.getItemAtPosition(pos));
         db.delete("Classes", "day" + "=" + b.getDay() + " and " + "units_in_day" + "=" + String.valueOf(b.getUnitsInDay()) + " and " + "course_name" + "='" + b.getCourseName() + "'", null);
+        db.close();
     }
 
     private void addToSchedule(int pos, int type) { //type 0 ListModelSchedules | type 1 ListModelSearch
@@ -874,7 +854,7 @@ public class MainActivity extends AppCompatActivity
         int day, units_in_day, duration, room_id, group_id, execution_type;
         String period, course_name, tutor_name, tutor_surname, tutor_code, room_name, group_name;
 
-        if(type == 0) {
+        if (type == 0) {
             ListModelSchedules a = CustomListViewValuesArrSchedules.get((Integer) list.getItemAtPosition(pos));
 
             day = a.getDay();
@@ -891,8 +871,7 @@ public class MainActivity extends AppCompatActivity
             tutor_code = a.getTutorCode();
             room_name = a.getRoomName();
             group_name = a.getGroupName();
-        }
-        else {
+        } else {
             ListModelSearch a = adaptersearch.getItemF(pos);
 
             day = a.getDay();
@@ -910,7 +889,6 @@ public class MainActivity extends AppCompatActivity
             room_name = a.getRoomName();
             group_name = a.getGroupName();
         }
-
 
         SQLiteDatabase mydatabase = openOrCreateDatabase("MyScheduleDB", MODE_PRIVATE, null);
         mydatabase.execSQL("INSERT INTO Classes (" +
@@ -942,27 +920,32 @@ public class MainActivity extends AppCompatActivity
                 room_name + "', '" +
                 group_name
                 + "')");
-        // day (int)
-        // units in day (int)
-        // from
-        // to
-        // class_name
-        // tutor_name
-        // class_details
-        // weeks
+
+        mydatabase.close();
     }
 
     private void loadDuration() {
         RequestQueue queue = Volley.newRequestQueue(this);
+        String SERVER_DURATION = SERVER_HOST + "/duration";
         StringRequest sr = new StringRequest(Request.Method.POST, SERVER_DURATION, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
 
-                if (response.length() > 0) {
-                    String sep[] = response.split("&");
+                try {
+                    JSONObject responseObject = new JSONArray(response).getJSONObject(0);
+                    startD = responseObject.getLong("start") * 1000;
+                    endD = responseObject.getLong("end") * 1000;
 
-                    startD = Long.parseLong(sep[0].trim());
-                    endD = Long.parseLong(sep[1].trim());
+                    SharedPreferences durationSP = getSharedPreferences("durationSP", 0);
+                    SharedPreferences.Editor editor = durationSP.edit();
+                    editor.putLong("startD", startD);
+                    editor.putLong("endD", endD);
+                    editor.commit();
+
+
+                } catch (Exception e) {
+                    Toast.makeText(MainActivity.this, R.string.unhandledException, Toast.LENGTH_SHORT).show();
+                    Log.d("exception", e.toString());
                 }
             }
         }, new Response.ErrorListener() {
@@ -978,96 +961,89 @@ public class MainActivity extends AppCompatActivity
         SUBLEVEL = 1;
         CustomListViewValuesArrSchedules.clear();
 //        list.notify();
-        list = (ListView) findViewById(R.id.listViewCustom);
+        list = findViewById(R.id.listViewCustom);
         list.setAdapter(null);
 
 
         RequestQueue queue = Volley.newRequestQueue(this);
+        String SERVER_SCHEDULES = SERVER_HOST + "/schedule";
         StringRequest sr = new StringRequest(Request.Method.POST, SERVER_SCHEDULES, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
 
-                String sep[] = response.split("<>");
+                try {
+                    JSONArray responseJson = new JSONArray(response);
 
-                day = new int[sep.length];
-                units_in_day = new int[sep.length];
-                duration = new int[sep.length];
-                room_id = new int[sep.length];
-                group_id = new int[sep.length];
-                execution_type = new int[sep.length];
+                    day = new int[responseJson.length()];
+                    units_in_day = new int[responseJson.length()];
+                    duration = new int[responseJson.length()];
+                    room_id = new int[responseJson.length()];
+                    group_id = new int[responseJson.length()];
+                    execution_type = new int[responseJson.length()];
 
-                period = new String[sep.length];
-                course_name = new String[sep.length];
-                tutor_name = new String[sep.length];
-                tutor_surname = new String[sep.length];
-                tutor_code = new String[sep.length];
-                room_name = new String[sep.length];
-                group_name = new String[sep.length];
+                    period = new String[responseJson.length()];
+                    course_name = new String[responseJson.length()];
+                    tutor_name = new String[responseJson.length()];
+                    tutor_surname = new String[responseJson.length()];
+                    tutor_code = new String[responseJson.length()];
+                    room_name = new String[responseJson.length()];
+                    group_name = new String[responseJson.length()];
 
-                if (response.length() > 0) {
-                    for (int i = 0; i < sep.length; i++) {
+                    for (int i = 0; i < responseJson.length(); i++) {
                         final ListModelSchedules sched = new ListModelSchedules();
 
-                        String[] sep_si = sep[i].split("&");
+                        JSONObject responseObject = responseJson.getJSONObject(i);
 
-                        if (!Objects.equals(sep_si[0], "") && sep_si[0].length() > 0)   // greška prilikom dohvata, php echo iz nekog razloga dodaje
-                        //prazna polja/znakove
-                        {
-                            sep_si[0] = sep_si[0].trim();
-                            day[i] = Integer.parseInt(sep_si[0]);
-                            sched.setDay(day[i]);
+                        day[i] = responseObject.getInt("day");
+                        sched.setDay(day[i]);
 
-                            units_in_day[i] = Integer.parseInt(sep_si[1]);
-                            sched.setUnitsInDay(units_in_day[i]);
+                        units_in_day[i] = responseObject.getInt("unitsInDay");
+                        sched.setUnitsInDay(units_in_day[i]);
 
-                            duration[i] = Integer.parseInt(sep_si[2]);
-                            sched.setDuration(duration[i]);
+                        duration[i] = responseObject.getInt("duration");
+                        sched.setDuration(duration[i]);
 
-                            room_id[i] = Integer.parseInt(sep_si[3]);
-                            sched.setRoomId(room_id[i]);
+                        room_id[i] = responseObject.getInt("roomId");
+                        sched.setRoomId(room_id[i]);
 
-                            period[i] = sep_si[4];
-                            sched.setPeriod(period[i]);
+                        period[i] = String.valueOf(responseObject.getInt("validFrom")) + " - " + String.valueOf(responseObject.getInt("validTo"));
+                        sched.setPeriod(period[i]);
 
-                            group_id[i] = Integer.parseInt(sep_si[5]);
-                            sched.setGroupId(group_id[i]);
+                        group_id[i] = responseObject.getInt("groupId");
+                        sched.setGroupId(group_id[i]);
 
-                            course_name[i] = sep_si[6];
-                            sched.setCourseName(course_name[i]);
+                        course_name[i] = responseObject.getString("courseName");
+                        sched.setCourseName(course_name[i]);
 
-                            execution_type[i] = Integer.parseInt(sep_si[7]);
-                            sched.setExecutionType(execution_type[i]);
+                        execution_type[i] = responseObject.getInt("executionType");
+                        sched.setExecutionType(execution_type[i]);
 
-                            tutor_name[i] = sep_si[8];
-                            sched.setTutorName(tutor_name[i]);
+                        tutor_name[i] = responseObject.getString("tutorName");
+                        sched.setTutorName(tutor_name[i]);
 
-                            tutor_surname[i] = sep_si[9];
-                            sched.setTutorSurname(tutor_surname[i]);
+                        tutor_surname[i] = responseObject.getString("tutorLastName");
+                        sched.setTutorSurname(tutor_surname[i]);
 
-                            tutor_code[i] = sep_si[10];
-                            sched.setTutorCode(tutor_code[i]);
+                        tutor_code[i] = responseObject.getString("tutorCode");
+                        sched.setTutorCode(tutor_code[i]);
 
-                            room_name[i] = sep_si[11];
-                            sched.setRoomName(room_name[i]);
+                        room_name[i] = responseObject.getString("roomName");
+                        sched.setRoomName(room_name[i]);
 
-                            group_name[i] = sep_si[12];
-                            if (!Objects.equals(group_name[i], "null")) {
-                                group_name[i] = group_name[i].replaceAll("(?i)(?<=[0-9])_(?=[A-Z])", " ");
-                                sched.setGroupName(group_name[i]);
-                            } else {
-                                sched.setGroupName("null");
-                            }
-
-
-                            CustomListViewValuesArrSchedules.add(sched);
+                        group_name[i] = responseObject.getString("groupName");
+                        if (!Objects.equals(group_name[i], "null")) {
+                            group_name[i] = group_name[i].replaceAll("(?i)(?<=[0-9])_(?=[A-Z])", " ");
+                            sched.setGroupName(group_name[i]);
+                        } else {
+                            sched.setGroupName("null");
                         }
 
-
+                        CustomListViewValuesArrSchedules.add(sched);
                     }
 
                     Resources res = getResources();
                     CustomListView = MainActivity.this;
-                    list = (ListView) findViewById(R.id.listViewCustom);
+                    list = findViewById(R.id.listViewCustom);
 
                     Collections.sort(CustomListViewValuesArrSchedules, new Comparator<ListModelSchedules>() {
                         @Override
@@ -1080,13 +1056,14 @@ public class MainActivity extends AppCompatActivity
                         }
                     });
 
-
                     adapterschedules = new SchedulesAdapter(CustomListView, CustomListViewValuesArrSchedules, res);
                     list.setAdapter(adapterschedules);
 
-
                     hideLoading();
-                } else {
+                } catch (Exception e) {
+                    Toast.makeText(MainActivity.this, R.string.unhandledException, Toast.LENGTH_SHORT).show();
+                    Log.d("exception", e.toString());
+
                     list.setAdapter(null);
                     hideLoading();
                 }
@@ -1099,7 +1076,7 @@ public class MainActivity extends AppCompatActivity
                     list.setVisibility(View.INVISIBLE);
                     ISVU.setVisibility(View.INVISIBLE);
                     noInternet.setVisibility(View.VISIBLE);
-                    Button retry = (Button) findViewById(R.id.noInternetBtn);
+                    Button retry = findViewById(R.id.noInternetBtn);
 
                     retry.setOnClickListener(new View.OnClickListener() {
 
@@ -1129,7 +1106,6 @@ public class MainActivity extends AppCompatActivity
         };
         showLoading();
         queue.add(sr);
-
 
         list.setMultiChoiceModeListener(new AbsListView.MultiChoiceModeListener() {
             @Override
@@ -1209,13 +1185,19 @@ public class MainActivity extends AppCompatActivity
                 ListSelectionInProgress = false;
             }
         });
-
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
         switch (requestCode) {
             case 1: {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    pushToCalendar();
+                } else {
+                    Toast.makeText(MainActivity.this, "Morate dozvoliti zapis u kalendar kako bi ova funkcionalnost bila omogućena", Toast.LENGTH_SHORT).show();
+                }
+            }
+            case 2: {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     pushToCalendar();
                 } else {
@@ -1283,25 +1265,25 @@ public class MainActivity extends AppCompatActivity
                                 }
 
                                 switch (setDay) {
-                                    case 0:
+                                    case 1:
                                         setDay = Calendar.MONDAY;
                                         break;
-                                    case 1:
+                                    case 2:
                                         setDay = Calendar.TUESDAY;
                                         break;
-                                    case 2:
+                                    case 3:
                                         setDay = Calendar.WEDNESDAY;
                                         break;
-                                    case 3:
+                                    case 4:
                                         setDay = Calendar.THURSDAY;
                                         break;
-                                    case 4:
+                                    case 5:
                                         setDay = Calendar.FRIDAY;
                                         break;
-                                    case 5:
+                                    case 6:
                                         setDay = Calendar.SATURDAY;
                                         break;
-                                    case 6:
+                                    case 7:
                                         setDay = Calendar.SUNDAY;
                                         break;
                                 }
@@ -1312,7 +1294,7 @@ public class MainActivity extends AppCompatActivity
                                 setEndTime = (int) (setEndTime * 0.5); // npr 2
                                 setEndTime = setStartTime + setEndTime; // npr 17 + 2 = 19 traje do 19 sati
 
-                                if (setDay != 0 && title != null && desc != null && room != null && setStartTime != 0 && setEndTime != 0) {
+                                if (setDay != 0 && title != null && room != null && setStartTime != 0 && setEndTime != 0) {
                                     addToCalendar(setDay, title, desc, room, setStartTime, setEndTime);
                                 }
                             }
@@ -1340,7 +1322,9 @@ public class MainActivity extends AppCompatActivity
                         });
 
                     }
+                    assert c != null;
                     c.close();
+                    mydatabase.close();
                 }
             });
         }
@@ -1348,71 +1332,34 @@ public class MainActivity extends AppCompatActivity
 
     private void addToCalendar(int DAY_WEEK, String TITLE, String DESC, String LOC, int hour_s, int hour_e) {
 
-        /* Construct event details */
         long startMillis;
         long endMillis;
-        int year = Calendar.getInstance().get(Calendar.YEAR);
-        int month = Calendar.getInstance().get(Calendar.MONTH);
 
         Calendar now = Calendar.getInstance();
 
         now.setTimeInMillis(startD);
-        now.setFirstDayOfWeek(Calendar.MONDAY );
+        now.setFirstDayOfWeek(Calendar.MONDAY);
 
-        //Set the holding calendar variable
-        Calendar beginTime = Calendar.getInstance();
+        Calendar beginTime;
 
-        if(now.get(Calendar.DAY_OF_WEEK) != DAY_WEEK )
-        {
-            //Let's assume its Wednesday (2) and we need monday (0)
+        if (now.get(Calendar.DAY_OF_WEEK) != DAY_WEEK) {
             int diff = DAY_WEEK - now.get(Calendar.DAY_OF_WEEK);
 
-            if(diff < 0)
-            {
-                //We go back in time because the current day in week is bigger than the needed one
+            if (diff < 0) {
                 beginTime = now; //set it to current date
                 beginTime.add(Calendar.DAY_OF_MONTH, -diff);
-            }
-            else
-            {
-                //difference is lower than 0. Let's say it's WED (2) and we need Friday (4), diff=2
+            } else {
                 beginTime = now;
                 beginTime.add(Calendar.DAY_OF_MONTH, diff);
             }
-        }
-        else
-        {
+        } else {
             beginTime = now;
         }
-/*
 
-
-        int day = now.get(Calendar.DAY_OF_WEEK);
-        int daym = now.get(Calendar.DAY_OF_MONTH);
-        int start_day;
-
-        if (day != DAY_WEEK) {
-
-            if (daym - day < 0) {
-                start_day = daym + DAY_WEEK;
-            } else {
-                start_day = daym - (day - DAY_WEEK);
-            }
-
-        } else {
-            start_day = daym;
-        }
-*/
-
-        //EVENT DATA
-        /*Calendar beginTime = Calendar.getInstance();
-        beginTime.set(year, month, start_day, hour_s, 0);*/
-        //Set starting hour and minutes
         beginTime.set(Calendar.HOUR_OF_DAY, hour_s);
         beginTime.set(Calendar.MINUTE, 0);
         startMillis = beginTime.getTimeInMillis();
-      //  Calendar endTime = Calendar.getInstance();
-       // endTime.set(year, month, start_day, hour_e, 0);
+
         beginTime.set(Calendar.HOUR_OF_DAY, hour_e);
         beginTime.set(Calendar.MINUTE, 0);
         endMillis = beginTime.getTimeInMillis();
@@ -1422,7 +1369,6 @@ public class MainActivity extends AppCompatActivity
         cal.setTimeInMillis(endD);
         final String RRuleEnd = dateFormat.format(cal.getTime());
 
-        // Insert Event
         ContentResolver cr = getContentResolver();
         ContentValues values = new ContentValues();
         TimeZone timeZone = TimeZone.getDefault();
@@ -1440,15 +1386,12 @@ public class MainActivity extends AppCompatActivity
         values.put(Events.CALENDAR_ID, 1);
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED) {
-
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_CALENDAR}, 101);
-
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_CALENDAR}, 1);
         }
 
         Uri uri = cr.insert(Events.CONTENT_URI, values);
 
-
-        // Retrieve ID for new event
+        assert uri != null;
         String eventID = uri.getLastPathSegment();
 
 
@@ -1458,139 +1401,95 @@ public class MainActivity extends AppCompatActivity
         reminders.put(CalendarContract.Reminders.MINUTES, 15);
 
         cr.insert(CalendarContract.Reminders.CONTENT_URI, reminders);
-
-    }
-
-    /**
-     * ATTENTION: This was auto-generated to implement the App Indexing API.
-     * See https://g.co/AppIndexing/AndroidStudio for more information.
-     */
-    public Action getIndexApiAction() {
-        Thing object = new Thing.Builder()
-                .setName("Main Page") // TODO: Define a title for the content shown.
-                // TODO: Make sure this auto-generated URL is correct.
-                .setUrl(Uri.parse("http://[ENTER-YOUR-URL-HERE]"))
-                .build();
-        return new Action.Builder(Action.TYPE_VIEW)
-                .setObject(object)
-                .setActionStatus(Action.STATUS_TYPE_COMPLETED)
-                .build();
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        client.connect();
-        AppIndex.AppIndexApi.start(client, getIndexApiAction());
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        AppIndex.AppIndexApi.end(client, getIndexApiAction());
-        client.disconnect();
     }
 
     public void loadAllSchedules() {
         SUBLEVEL = 6;
         CustomSearchValues.clear();
-//        list.notify();
-        list = (ListView) findViewById(R.id.listViewCustom);
+
+        list = findViewById(R.id.listViewCustom);
         list.setAdapter(null);
 
 
         RequestQueue queue = Volley.newRequestQueue(this);
+        String SERVER_ALL = SERVER_HOST + "/all";
         StringRequest sr = new StringRequest(Request.Method.POST, SERVER_ALL, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
 
-                String sep[] = response.split("<>");
+                try {
+                    JSONArray responseJson = new JSONArray(response);
 
-                day = new int[sep.length];
-                units_in_day = new int[sep.length];
-                duration = new int[sep.length];
-                room_id = new int[sep.length];
-                group_id = new int[sep.length];
-                execution_type = new int[sep.length];
+                    day = new int[responseJson.length()];
+                    units_in_day = new int[responseJson.length()];
+                    duration = new int[responseJson.length()];
+                    room_id = new int[responseJson.length()];
+                    group_id = new int[responseJson.length()];
+                    execution_type = new int[responseJson.length()];
 
-                period = new String[sep.length];
-                course_name = new String[sep.length];
-                tutor_name = new String[sep.length];
-                tutor_surname = new String[sep.length];
-                tutor_code = new String[sep.length];
-                room_name = new String[sep.length];
-                group_name = new String[sep.length];
+                    period = new String[responseJson.length()];
+                    course_name = new String[responseJson.length()];
+                    tutor_name = new String[responseJson.length()];
+                    tutor_surname = new String[responseJson.length()];
+                    tutor_code = new String[responseJson.length()];
+                    room_name = new String[responseJson.length()];
+                    group_name = new String[responseJson.length()];
 
-                if (response.length() > 0) {
-                    for (int i = 0; i < sep.length; i++) {
+                    for (int i = 0; i < responseJson.length(); i++) {
                         final ListModelSearch sched = new ListModelSearch();
 
-                        String[] sep_si = sep[i].split("&");
+                        JSONObject responseObject = responseJson.getJSONObject(i);
 
-                        if (!Objects.equals(sep_si[0], "") && sep_si[0].length() > 0)   // greška prilikom dohvata, php echo iz nekog razloga dodaje
-                        //prazna polja/znakove
-                        {
-                            sep_si[0] = sep_si[0].trim();
-                            day[i] = Integer.parseInt(sep_si[0]);
-                            sched.setDay(day[i]);
+                        day[i] = responseObject.getInt("day");
+                        sched.setDay(day[i]);
 
-                            units_in_day[i] = Integer.parseInt(sep_si[1]);
-                            sched.setUnitsInDay(units_in_day[i]);
+                        units_in_day[i] = responseObject.getInt("unitsInDay");
+                        sched.setUnitsInDay(units_in_day[i]);
 
-                            duration[i] = Integer.parseInt(sep_si[2]);
-                            sched.setDuration(duration[i]);
+                        duration[i] = responseObject.getInt("duration");
+                        sched.setDuration(duration[i]);
 
-                            room_id[i] = Integer.parseInt(sep_si[3]);
-                            sched.setRoomId(room_id[i]);
+                        room_id[i] = responseObject.getInt("roomId");
+                        sched.setRoomId(room_id[i]);
 
-                            period[i] = sep_si[4];
-                            sched.setPeriod(period[i]);
+                        period[i] = String.valueOf(responseObject.getInt("validFrom")) + " - " + String.valueOf(responseObject.getInt("validTo"));
+                        sched.setPeriod(period[i]);
 
-                            group_id[i] = Integer.parseInt(sep_si[5]);
-                            sched.setGroupId(group_id[i]);
+                        group_id[i] = responseObject.getInt("groupId");
+                        sched.setGroupId(group_id[i]);
 
-                            course_name[i] = sep_si[6];
-                            sched.setCourseName(course_name[i]);
+                        course_name[i] = responseObject.getString("courseName");
+                        sched.setCourseName(course_name[i]);
 
-                            execution_type[i] = Integer.parseInt(sep_si[7]);
-                            sched.setExecutionType(execution_type[i]);
+                        execution_type[i] = responseObject.getInt("executionType");
+                        sched.setExecutionType(execution_type[i]);
 
-                            tutor_name[i] = sep_si[8];
-                            sched.setTutorName(tutor_name[i]);
+                        tutor_name[i] = responseObject.getString("tutorName");
+                        sched.setTutorName(tutor_name[i]);
 
-                            tutor_surname[i] = sep_si[9];
-                            sched.setTutorSurname(tutor_surname[i]);
+                        tutor_surname[i] = responseObject.getString("tutorLastName");
+                        sched.setTutorSurname(tutor_surname[i]);
 
-                            tutor_code[i] = sep_si[10];
-                            sched.setTutorCode(tutor_code[i]);
+                        tutor_code[i] = responseObject.getString("tutorCode");
+                        sched.setTutorCode(tutor_code[i]);
 
-                            room_name[i] = sep_si[11];
-                            sched.setRoomName(room_name[i]);
+                        room_name[i] = responseObject.getString("roomName");
+                        sched.setRoomName(room_name[i]);
 
-                            group_name[i] = sep_si[12];
-                            if (!Objects.equals(group_name[i], "null")) {
-                                group_name[i] = group_name[i].replaceAll("(?i)(?<=[0-9])_(?=[A-Z])", " ");
-                                sched.setGroupName(group_name[i]);
-                            } else {
-                                sched.setGroupName("null");
-                            }
-
-
-                            CustomSearchValues.add(sched);
+                        group_name[i] = responseObject.getString("groupName");
+                        if (!Objects.equals(group_name[i], "null")) {
+                            group_name[i] = group_name[i].replaceAll("(?i)(?<=[0-9])_(?=[A-Z])", " ");
+                            sched.setGroupName(group_name[i]);
+                        } else {
+                            sched.setGroupName("null");
                         }
 
-
+                        CustomSearchValues.add(sched);
                     }
 
                     Resources res = getResources();
                     CustomListView = MainActivity.this;
-                    list = (ListView) findViewById(R.id.listViewCustom);
+                    list = findViewById(R.id.listViewCustom);
 
                     Collections.sort(CustomSearchValues, new Comparator<ListModelSearch>() {
 
@@ -1604,13 +1503,14 @@ public class MainActivity extends AppCompatActivity
                         }
                     });
 
-
                     adaptersearch = new SearchAdapter(CustomListView, CustomSearchValues, res);
                     list.setAdapter(adaptersearch);
 
-
                     hideLoading();
-                } else {
+                } catch (Exception e) {
+                    Toast.makeText(MainActivity.this, R.string.unhandledException, Toast.LENGTH_SHORT).show();
+                    Log.d("exception", e.toString());
+
                     list.setAdapter(null);
                     hideLoading();
                 }
@@ -1623,7 +1523,7 @@ public class MainActivity extends AppCompatActivity
                     list.setVisibility(View.INVISIBLE);
                     ISVU.setVisibility(View.INVISIBLE);
                     noInternet.setVisibility(View.VISIBLE);
-                    Button retry = (Button) findViewById(R.id.noInternetBtn);
+                    Button retry = findViewById(R.id.noInternetBtn);
 
                     retry.setOnClickListener(new View.OnClickListener() {
 
@@ -1639,9 +1539,8 @@ public class MainActivity extends AppCompatActivity
         }) {
             @Override
             protected Map<String, String> getParams() {
-                Map<String, String> params = new HashMap<>();
 
-                return params;
+                return new HashMap<>();
             }
 
             @Override
@@ -1690,7 +1589,6 @@ public class MainActivity extends AppCompatActivity
                         break;
                     case R.id.addSch:
                         c = 0;
-                        Log.d("list adapter size", String.valueOf(list.getAdapter().getCount()));
                         for (int i = 0; i < list.getAdapter().getCount(); i++) {
                             if (list.isItemChecked(i)) {
                                 addToSchedule(i, 1);
@@ -1721,10 +1619,8 @@ public class MainActivity extends AppCompatActivity
                             loadMySchedule();
                             mode.finish();
                         }
-
                         break;
                 }
-
                 return false;
             }
 
@@ -1735,5 +1631,6 @@ public class MainActivity extends AppCompatActivity
         });
         setTitle(R.string.navCat4);
     }
+
 }
 

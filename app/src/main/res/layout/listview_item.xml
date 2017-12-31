@@ -6,7 +6,9 @@
     android:background="@drawable/list_row"
     android:descendantFocusability="blocksDescendants"
     android:elevation="2dp"
-    android:minHeight="80dp">
+    android:minHeight="80dp"
+    android:paddingBottom="5dp"
+    android:paddingTop="5dp">
 
     <RelativeLayout
         android:id="@+id/lday"

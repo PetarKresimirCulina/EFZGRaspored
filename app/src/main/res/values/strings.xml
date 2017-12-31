@@ -6,7 +6,7 @@
 
     <string name="navTitle">Sveučilište u Zagrebu\n<![CDATA[<b>Ekonomski Fakultet</b>]]></string>
     <string name="navSubTitle">EFZG Satnica Predavanja</string>
-    <string name="navURL">www.efzg.hr</string>
+    <string name="navURL">www.efzg.unizg.hr</string>
 
     <string name="navCat3">Moja satnica</string>
     <string name="navCat4">Pretraga kolegija</string>
@@ -34,6 +34,8 @@
     <string name="fri">P\nE\nT</string>
     <string name="sat">S\nU\nB</string>
     <string name="internet">Molimo provjerite svoje internet postavke</string>
+    <string name="unhandledException">Došlo je do neočekivane pogreške. Molimo pokušajte kasnije.</string>
+
     <string name="internetBtn">Pokušaj ponovno</string>
 
     <string name="tutorname_1">%1$s %2$s</string>
@@ -44,7 +46,7 @@
     <string name="schedule_type_21">SEMINAR - %1$S\n(%2$S)</string>
     <string name="schedule_week">Tjedan: %1$S</string>
 
-    <string name="clientLink"><u>www.efzg.hr</u></string>
+    <string name="clientLink"><u>www.efzg.unizg.hr</u></string>
     <string name="devLink"><u>www.pkculina.com</u></string>
 
     <string name="legal"><u>Licence trećih strana</u></string>

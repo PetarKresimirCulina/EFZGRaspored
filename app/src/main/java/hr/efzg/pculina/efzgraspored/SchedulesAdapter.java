@@ -31,12 +31,9 @@ public class SchedulesAdapter extends BaseAdapter {
      *****************/
     public SchedulesAdapter(Activity a, ArrayList d, Resources resLocal) {
 
-        /********** Take passed values **********/
-        /********** Declare Used Variables */
         data = d;
         res = resLocal;
 
-        /***********  Layout inflator to call external xml layout () ***********/
         inflater = (LayoutInflater) a.
                 getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
@@ -113,29 +110,25 @@ public class SchedulesAdapter extends BaseAdapter {
 
         if (convertView == null) {
 
-            /****** Inflate tabitem.xml file for each row ( Defined below ) *******/
             vi = inflater.inflate(R.layout.listview_item, parent, false);
 
-            /****** View Holder Object to contain tabitem.xml file elements ******/
-
             holder = new ViewHolder();
-            holder.time_from = (TextView) vi.findViewById(R.id.timeFrom);
+            holder.time_from = vi.findViewById(R.id.timeFrom);
 
-            holder.time_to = (TextView) vi.findViewById(R.id.timeTo);
-            holder.course = (TextView) vi.findViewById(R.id.className);
+            holder.time_to = vi.findViewById(R.id.timeTo);
+            holder.course = vi.findViewById(R.id.className);
 
 
-            holder.tutor = (TextView) vi.findViewById(R.id.classTutor);
+            holder.tutor = vi.findViewById(R.id.classTutor);
 
-            holder.course_room_details = (TextView) vi.findViewById(R.id.classTypePlace);
+            holder.course_room_details = vi.findViewById(R.id.classTypePlace);
 
-            holder.course_weeks = (TextView) vi.findViewById(R.id.classDate);
+            holder.course_weeks = vi.findViewById(R.id.classDate);
 
-            holder.day = (TextView) vi.findViewById(R.id.DAY1);
+            holder.day = vi.findViewById(R.id.DAY1);
 
-            holder.daybg = (RelativeLayout) vi.findViewById(R.id.lday);
+            holder.daybg = vi.findViewById(R.id.lday);
 
-            /************  Set holder with LayoutInflater ************/
             vi.setTag(holder);
         } else
             holder = (ViewHolder) vi.getTag();
@@ -150,11 +143,9 @@ public class SchedulesAdapter extends BaseAdapter {
             holder.day.setText("-");
 
         } else {
-            /***** Get each Model object from Arraylist ********/
             tempValues = null;
             tempValues = (ListModelSchedules) data.get(position);
 
-            /************  Set Model values in Holder elements ***********/
             int t_int = tempValues.getUnitsInDay();
             t_int = (int) (t_int * 0.5);
             t_int = 7 + t_int; // npr 17
@@ -200,27 +191,27 @@ public class SchedulesAdapter extends BaseAdapter {
             holder.course_weeks.setText(parent.getContext().getString(R.string.schedule_week, tempValues.getPeriod()));
 
             switch (tempValues.getDay()) {
-                case 0:
+                case 1:
                     holder.day.setText(R.string.mon);
                     holder.daybg.setBackgroundColor(ContextCompat.getColor(vi.getContext(), R.color.day1));
                     break;
-                case 1:
+                case 2:
                     holder.day.setText(R.string.tue);
                     holder.daybg.setBackgroundColor(ContextCompat.getColor(vi.getContext(), R.color.day2));
                     break;
-                case 2:
+                case 3:
                     holder.day.setText(R.string.wed);
                     holder.daybg.setBackgroundColor(ContextCompat.getColor(vi.getContext(), R.color.day3));
                     break;
-                case 3:
+                case 4:
                     holder.day.setText(R.string.thu);
                     holder.daybg.setBackgroundColor(ContextCompat.getColor(vi.getContext(), R.color.day4));
                     break;
-                case 4:
+                case 5:
                     holder.day.setText(R.string.fri);
                     holder.daybg.setBackgroundColor(ContextCompat.getColor(vi.getContext(), R.color.day5));
                     break;
-                case 5:
+                case 6:
                     holder.day.setText(R.string.sat);
                     holder.daybg.setBackgroundColor(ContextCompat.getColor(vi.getContext(), R.color.colorPrimary));
                     break;

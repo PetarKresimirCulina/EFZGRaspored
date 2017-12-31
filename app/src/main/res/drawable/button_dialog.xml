@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@drawable/button_dialog_pressed" android:state_pressed="true"/>
-    <!-- focused state -->
-    <item android:drawable="@drawable/button_dialog_pressed" android:state_focused="true"/>
-    <!-- default state -->
-    <item android:drawable="@drawable/button_dialog_normal"/>
-</selector>
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="?android:colorControlHighlight">
+    <item>
+        <selector xmlns:android="http://schemas.android.com/apk/res/android">
+            <item android:drawable="@drawable/button_dialog_pressed" android:state_pressed="true"/>
+            <!-- focused state -->
+            <item android:drawable="@drawable/button_dialog_pressed" android:state_focused="true"/>
+            <!-- default state -->
+            <item android:drawable="@drawable/button_dialog_normal"/>
+        </selector>
+    </item>
+</ripple>

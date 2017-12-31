@@ -4,9 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.res.Resources;
 import android.database.DataSetObserver;
-import android.provider.SyncStateContract;
 import android.support.v4.content.ContextCompat;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,14 +16,12 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
-
-import static hr.efzg.pculina.efzgraspored.MainActivity.CustomSearchValues;
 
 /**
  * Created by Petar-Kresimir Culina on 3/1/2016.
  */
+@SuppressWarnings("unchecked")
 public class SearchAdapter extends BaseAdapter implements Filterable {
 
     private ArrayList data;
@@ -41,12 +37,9 @@ public class SearchAdapter extends BaseAdapter implements Filterable {
      *****************/
     public SearchAdapter(Activity a, ArrayList d, Resources resLocal) {
 
-        /********** Take passed values **********/
-        /********** Declare Used Variables */
         data = d;
         res = resLocal;
 
-        /***********  Layout inflator to call external xml layout () ***********/
         inflater = (LayoutInflater) a.
                 getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
@@ -124,29 +117,25 @@ public class SearchAdapter extends BaseAdapter implements Filterable {
 
         if (convertView == null) {
 
-            /****** Inflate tabitem.xml file for each row ( Defined below ) *******/
             vi = inflater.inflate(R.layout.listview_item, parent, false);
 
-            /****** View Holder Object to contain tabitem.xml file elements ******/
-
             holder = new ViewHolder();
-            holder.time_from = (TextView) vi.findViewById(R.id.timeFrom);
+            holder.time_from = vi.findViewById(R.id.timeFrom);
 
-            holder.time_to = (TextView) vi.findViewById(R.id.timeTo);
-            holder.course = (TextView) vi.findViewById(R.id.className);
+            holder.time_to = vi.findViewById(R.id.timeTo);
+            holder.course = vi.findViewById(R.id.className);
 
 
-            holder.tutor = (TextView) vi.findViewById(R.id.classTutor);
+            holder.tutor = vi.findViewById(R.id.classTutor);
 
-            holder.course_room_details = (TextView) vi.findViewById(R.id.classTypePlace);
+            holder.course_room_details = vi.findViewById(R.id.classTypePlace);
 
-            holder.course_weeks = (TextView) vi.findViewById(R.id.classDate);
+            holder.course_weeks = vi.findViewById(R.id.classDate);
 
-            holder.day = (TextView) vi.findViewById(R.id.DAY1);
+            holder.day = vi.findViewById(R.id.DAY1);
 
-            holder.daybg = (RelativeLayout) vi.findViewById(R.id.lday);
+            holder.daybg = vi.findViewById(R.id.lday);
 
-            /************  Set holder with LayoutInflater ************/
             vi.setTag(holder);
         } else
             holder = (ViewHolder) vi.getTag();
@@ -162,12 +151,10 @@ public class SearchAdapter extends BaseAdapter implements Filterable {
             parent.setVisibility(View.INVISIBLE);
 
         } else {
-            /***** Get each Model object from Arraylist ********/
             parent.setVisibility(View.VISIBLE);
             tempValues = null;
             tempValues = (ListModelSearch) data.get(position);
 
-            /************  Set Model values in Holder elements ***********/
             int t_int = tempValues.getUnitsInDay();
             t_int = (int) (t_int * 0.5);
             t_int = 7 + t_int; // npr 17
@@ -213,27 +200,27 @@ public class SearchAdapter extends BaseAdapter implements Filterable {
             holder.course_weeks.setText(parent.getContext().getString(R.string.schedule_week, tempValues.getPeriod()));
 
             switch (tempValues.getDay()) {
-                case 0:
+                case 1:
                     holder.day.setText(R.string.mon);
                     holder.daybg.setBackgroundColor(ContextCompat.getColor(vi.getContext(), R.color.day1));
                     break;
-                case 1:
+                case 2:
                     holder.day.setText(R.string.tue);
                     holder.daybg.setBackgroundColor(ContextCompat.getColor(vi.getContext(), R.color.day2));
                     break;
-                case 2:
+                case 3:
                     holder.day.setText(R.string.wed);
                     holder.daybg.setBackgroundColor(ContextCompat.getColor(vi.getContext(), R.color.day3));
                     break;
-                case 3:
+                case 4:
                     holder.day.setText(R.string.thu);
                     holder.daybg.setBackgroundColor(ContextCompat.getColor(vi.getContext(), R.color.day4));
                     break;
-                case 4:
+                case 5:
                     holder.day.setText(R.string.fri);
                     holder.daybg.setBackgroundColor(ContextCompat.getColor(vi.getContext(), R.color.day5));
                     break;
-                case 5:
+                case 6:
                     holder.day.setText(R.string.sat);
                     holder.daybg.setBackgroundColor(ContextCompat.getColor(vi.getContext(), R.color.colorPrimary));
                     break;
@@ -247,30 +234,31 @@ public class SearchAdapter extends BaseAdapter implements Filterable {
         return tempValues.getCourseName();
     }
 
-    public ListModelSearch getItemF(int i)
-    {
+    public ListModelSearch getItemF(int i) {
         return (ListModelSearch) data.get(i);
     }
 
     @Override
     public Filter getFilter() {
-        Filter filter = new Filter() {
+        return new Filter() {
 
             @SuppressWarnings("unchecked")
             @Override
-            protected void publishResults(CharSequence constraint,FilterResults results) {
+            protected void publishResults(CharSequence constraint, FilterResults results) {
 
                 data = (ArrayList) results.values; // has the filtered values
                 notifyDataSetChanged();  // notifies the data with new filtered values
                 lv.invalidateViews();
             }
 
+            @SuppressWarnings("unchecked")
             @Override
             protected FilterResults performFiltering(CharSequence constraint) {
                 FilterResults results = new FilterResults();        // Holds the results of a filtering operation in values
                 ArrayList<ListModelSearch> FilteredArrList = new ArrayList<>();
 
                 if (data_orig == null) {
+                    //noinspection unchecked
                     data_orig = new ArrayList<ListModelSearch>(data); // saves the original data in mOriginalValues
                 }
 
@@ -286,8 +274,8 @@ public class SearchAdapter extends BaseAdapter implements Filterable {
                     results.values = data_orig;
                 } else {
                     constraint = constraint.toString().toLowerCase();
-                    for (int i = 0; i < data_orig.size(); i++) {
-                        ListModelSearch a = (ListModelSearch) data_orig.get(i);
+                    for (int i1 = 0; i1 < data_orig.size(); i1++) {
+                        ListModelSearch a = (ListModelSearch) data_orig.get(i1);
                         if (a.getCourseName().toLowerCase().contains(constraint.toString()) || a.getRoomName().toLowerCase().contains(constraint.toString()) || a.getTutorName().toLowerCase().contains(constraint.toString()) || a.getTutorSurname().toLowerCase().contains(constraint.toString())) {
                             FilteredArrList.add(a);
                         }
@@ -299,7 +287,6 @@ public class SearchAdapter extends BaseAdapter implements Filterable {
                 return results;
             }
         };
-        return filter;
     }
 
 }

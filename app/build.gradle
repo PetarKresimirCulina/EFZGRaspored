@@ -1,15 +1,17 @@
+
+
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion '25.0.0'
+    compileSdkVersion 26
+    buildToolsVersion '26.0.2'
 
     defaultConfig {
         applicationId "hr.efzg.pculina.efzgraspored"
         minSdkVersion 21
-        targetSdkVersion 23
-        versionCode 310
-        versionName "3.1.0"
+        targetSdkVersion 26
+        versionCode 400
+        versionName "4.0.0"
     }
     buildTypes {
         release {
@@ -22,9 +24,10 @@ android {
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     testCompile 'junit:junit:4.12'
-    compile 'com.android.support:appcompat-v7:23.4.0'
-    compile 'com.android.support:support-v4:23.4.0'
-    compile 'com.android.support:design:23.4.0'
-    compile project(':volley')
-    compile 'com.google.android.gms:play-services-appindexing:9.8.0'
+    //noinspection GradleCompatible
+    compile 'com.android.support:appcompat-v7:26.1.0'
+    compile 'com.android.support:support-v4:26.1.0'
+    compile 'com.android.support:design:26.1.0'
+    compile 'com.android.volley:volley:1.1.0'
+    compile 'com.google.firebase:firebase-appindexing:11.8.0'
 }

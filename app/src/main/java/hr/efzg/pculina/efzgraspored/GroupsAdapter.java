@@ -30,12 +30,9 @@ public class GroupsAdapter extends BaseAdapter {
      *****************/
     public GroupsAdapter(Activity a, ArrayList d, Resources resLocal) {
 
-        /********** Take passed values **********/
-        /********** Declare Used Variables */
         data = d;
         res = resLocal;
 
-        /***********  Layout inflator to call external xml layout () ***********/
         inflater = (LayoutInflater) a.
                 getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
@@ -103,15 +100,11 @@ public class GroupsAdapter extends BaseAdapter {
 
         if (convertView == null) {
 
-            /****** Inflate tabitem.xml file for each row ( Defined below ) *******/
             vi = inflater.inflate(R.layout.listview_item_group, parent, false);
 
-            /****** View Holder Object to contain tabitem.xml file elements ******/
-
             holder = new ViewHolder();
-            holder.text = (TextView) vi.findViewById(R.id.classDay);
+            holder.text = vi.findViewById(R.id.classDay);
 
-            /************  Set holder with LayoutInflater ************/
             vi.setTag(holder);
         } else
             holder = (ViewHolder) vi.getTag();
@@ -120,11 +113,8 @@ public class GroupsAdapter extends BaseAdapter {
             holder.text.setText("-");
 
         } else {
-            /***** Get each Model object from Arraylist ********/
             tempValues = null;
             tempValues = (ListModelGroups) data.get(position);
-
-            /************  Set Model values in Holder elements ***********/
 
             holder.text.setText(tempValues.getGroupName());
 

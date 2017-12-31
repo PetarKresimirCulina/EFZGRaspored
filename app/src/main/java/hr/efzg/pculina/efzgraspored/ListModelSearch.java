@@ -133,6 +133,8 @@ public class ListModelSearch {
         return this.group_name;
     }
 
-    public int getYear() { return this.year; }
+    public int getYear() {
+        return this.year;
+    }
 
 }
