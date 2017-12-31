@@ -1,4 +1,4 @@
-package hr.efzg.pculina.efzgraspored;
+package hr.efzg.pculina.efzgraspored.adapters;
 
 import android.app.Activity;
 import android.content.Context;
@@ -18,24 +18,25 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.Objects;
 
+import hr.efzg.pculina.efzgraspored.R;
+import hr.efzg.pculina.efzgraspored.models.schedule;
+
 /**
  * Created by Petar-Kresimir Culina on 3/1/2016.
  */
-@SuppressWarnings("unchecked")
-public class SearchAdapter extends BaseAdapter implements Filterable {
+public class schedules extends BaseAdapter implements Filterable {
 
     private ArrayList data;
     private ArrayList data_orig;
     private static LayoutInflater inflater = null;
     public Resources res;
-    ListModelSearch tempValues = null;
-    int i = 0;
+    schedule tempValues = null;
     ListView lv;
 
     /*************
      * CustomAdapter Constructor
      *****************/
-    public SearchAdapter(Activity a, ArrayList d, Resources resLocal) {
+    public schedules(Activity a, ArrayList d, Resources resLocal) {
 
         data = d;
         res = resLocal;
@@ -141,19 +142,18 @@ public class SearchAdapter extends BaseAdapter implements Filterable {
             holder = (ViewHolder) vi.getTag();
 
         if (data.size() <= 0) {
-            /*holder.time_from.setText("-");
+            holder.time_from.setText("-");
             holder.time_to.setText("-");
             holder.course.setText("-");
             holder.tutor.setText("-");
             holder.course_room_details.setText("-");
             holder.course_weeks.setText("-");
-            holder.day.setText("-");*/
+            holder.day.setText("-");
             parent.setVisibility(View.INVISIBLE);
-
         } else {
             parent.setVisibility(View.VISIBLE);
             tempValues = null;
-            tempValues = (ListModelSearch) data.get(position);
+            tempValues = (schedule) data.get(position);
 
             int t_int = tempValues.getUnitsInDay();
             t_int = (int) (t_int * 0.5);
@@ -176,11 +176,7 @@ public class SearchAdapter extends BaseAdapter implements Filterable {
             holder.time_to.setText(tt);
             holder.course.setText(tempValues.getCourseName());
 
-            //if (tempValues.getTutorCode().equals("none")) {
             holder.tutor.setText(parent.getContext().getString(R.string.tutorname_1, tempValues.getTutorName(), tempValues.getTutorSurname()));
-            /*} else {
-                holder.tutor.setText(parent.getContext().getString(R.string.tutorname_2, tempValues.getTutorCode(), tempValues.getTutorName(), tempValues.getTutorSurname()));
-            }*/
 
             if (tempValues.getExecutionType() == 1 || tempValues.getExecutionType() == 3) {
                 if (Objects.equals(tempValues.getGroupName(), "null")) {
@@ -230,12 +226,8 @@ public class SearchAdapter extends BaseAdapter implements Filterable {
         return vi;
     }
 
-    public String getCourseName() {
-        return tempValues.getCourseName();
-    }
-
-    public ListModelSearch getItemF(int i) {
-        return (ListModelSearch) data.get(i);
+    public schedule getItemF(int i) {
+        return (schedule) data.get(i);
     }
 
     @Override
@@ -246,28 +238,25 @@ public class SearchAdapter extends BaseAdapter implements Filterable {
             @Override
             protected void publishResults(CharSequence constraint, FilterResults results) {
 
-                data = (ArrayList) results.values; // has the filtered values
-                notifyDataSetChanged();  // notifies the data with new filtered values
+                data = (ArrayList) results.values;
+                notifyDataSetChanged();
                 lv.invalidateViews();
             }
 
             @SuppressWarnings("unchecked")
             @Override
             protected FilterResults performFiltering(CharSequence constraint) {
-                FilterResults results = new FilterResults();        // Holds the results of a filtering operation in values
-                ArrayList<ListModelSearch> FilteredArrList = new ArrayList<>();
+                lv.smoothScrollBy(0, 0);
+                scrollMyListViewToBottom();
+
+                FilterResults results = new FilterResults();
+                ArrayList<schedule> FilteredArrList = new ArrayList<>();
 
                 if (data_orig == null) {
                     //noinspection unchecked
-                    data_orig = new ArrayList<ListModelSearch>(data); // saves the original data in mOriginalValues
+                    data_orig = new ArrayList<schedule>(data);
                 }
 
-                /********
-                 *
-                 *  If constraint(CharSequence that is received) is null returns the mOriginalValues(Original) values
-                 *  else does the Filtering and returns FilteredArrList(Filtered)
-                 *
-                 ********/
                 if (constraint == null || constraint.length() == 0) {
                     // set the Original result to return
                     results.count = data_orig.size();
@@ -275,7 +264,7 @@ public class SearchAdapter extends BaseAdapter implements Filterable {
                 } else {
                     constraint = constraint.toString().toLowerCase();
                     for (int i1 = 0; i1 < data_orig.size(); i1++) {
-                        ListModelSearch a = (ListModelSearch) data_orig.get(i1);
+                        schedule a = (schedule) data_orig.get(i1);
                         if (a.getCourseName().toLowerCase().contains(constraint.toString()) || a.getRoomName().toLowerCase().contains(constraint.toString()) || a.getTutorName().toLowerCase().contains(constraint.toString()) || a.getTutorSurname().toLowerCase().contains(constraint.toString())) {
                             FilteredArrList.add(a);
                         }
@@ -289,5 +278,12 @@ public class SearchAdapter extends BaseAdapter implements Filterable {
         };
     }
 
+    private void scrollMyListViewToBottom() {
+        lv.post(new Runnable() {
+            @Override
+            public void run() {
+                lv.setSelectionAfterHeaderView();
+            }
+        });
+    }
 }
-

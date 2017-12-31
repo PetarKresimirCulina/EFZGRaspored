@@ -1,9 +1,9 @@
-package hr.efzg.pculina.efzgraspored;
+package hr.efzg.pculina.efzgraspored.models;
 
 /**
  * Created by Petar-Kresimir Culina on 2/28/2016.
  */
-public class ListModelGroups {
+public class group {
 
     private String groupName;
     private int group_id;
@@ -35,9 +35,5 @@ public class ListModelGroups {
 
     public int getID() {
         return this.group_id;
-    }
-
-    public int getParentID() {
-        return this.parent_id;
     }
 }

@@ -1,21 +1,17 @@
-package hr.efzg.pculina.efzgraspored;
+package hr.efzg.pculina.efzgraspored.models;
 
 /**
  * Created by Petar-Kresimir Culina on 3/1/2016.
  */
-public class ListModelSearch {
+public class schedule {
 
-    private int day, units_in_day, duration, room_id, group_id, execution_type, year;
+    private int day, units_in_day, duration, room_id, group_id, execution_type;
     private String period, course_name, tutor_name, tutor_surname, tutor_code, room_name, group_name;
-    private boolean selected;
 
     /***********
      * Set Methods
      ******************/
 
-    public void setSelectedA(boolean selected) {
-        this.selected = selected;
-    }
 
     public void setDay(int day) {
         this.day = day;
@@ -69,17 +65,10 @@ public class ListModelSearch {
         this.group_name = group_name;
     }
 
-    public void setYear(int year) {
-        this.year = year;
-    }
-
     /***********
      * Get Methods
      ****************/
 
-    public boolean getSelectedA() {
-        return this.selected;
-    }
 
     public int getDay() {
         return this.day;
@@ -131,10 +120,6 @@ public class ListModelSearch {
 
     public String getGroupName() {
         return this.group_name;
-    }
-
-    public int getYear() {
-        return this.year;
     }
 
 }

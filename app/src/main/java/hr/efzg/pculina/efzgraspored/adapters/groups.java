@@ -1,4 +1,4 @@
-package hr.efzg.pculina.efzgraspored;
+package hr.efzg.pculina.efzgraspored.adapters;
 
 import android.app.Activity;
 import android.content.Context;
@@ -13,22 +13,26 @@ import android.widget.TextView;
 
 import java.util.ArrayList;
 
+import hr.efzg.pculina.efzgraspored.MainActivity;
+import hr.efzg.pculina.efzgraspored.R;
+import hr.efzg.pculina.efzgraspored.models.group;
+
 /**
  * Created by Petar-Kresimir Culina on 2/28/2016.
  */
-public class GroupsAdapter extends BaseAdapter {
+public class groups extends BaseAdapter {
 
     private ArrayList data;
     private static LayoutInflater inflater = null;
     private Context mContext;
     public Resources res;
-    ListModelGroups tempValues = null;
+    group tempValues = null;
     int i = 0;
 
     /*************
      * CustomAdapter Constructor
      *****************/
-    public GroupsAdapter(Activity a, ArrayList d, Resources resLocal) {
+    public groups(Activity a, ArrayList d, Resources resLocal) {
 
         data = d;
         res = resLocal;
@@ -114,7 +118,7 @@ public class GroupsAdapter extends BaseAdapter {
 
         } else {
             tempValues = null;
-            tempValues = (ListModelGroups) data.get(position);
+            tempValues = (group) data.get(position);
 
             holder.text.setText(tempValues.getGroupName());
 

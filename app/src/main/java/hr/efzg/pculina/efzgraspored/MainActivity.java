@@ -58,8 +58,6 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
-import com.google.android.gms.appindexing.AppIndex;
-import com.google.android.gms.common.api.GoogleApiClient;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -76,22 +74,30 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TimeZone;
 
+import hr.efzg.pculina.efzgraspored.adapters.schedules;
+import hr.efzg.pculina.efzgraspored.models.group;
+import hr.efzg.pculina.efzgraspored.models.schedule;
+
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     ListView list;
-    private GroupsAdapter adapter;
-    private SchedulesAdapter adapterschedules;
+    private hr.efzg.pculina.efzgraspored.adapters.groups adapter;
+    private schedules adapterschedules;
     private MainActivity CustomListView = null;
-    private final ArrayList<ListModelGroups> CustomListViewValuesArr = new ArrayList<>();
-    private final ArrayList<ListModelSchedules> CustomListViewValuesArrSchedules = new ArrayList<>();
-    public static ArrayList<ListModelSearch> CustomSearchValues = new ArrayList<>();
+    private final ArrayList<group> CustomListViewValuesArr = new ArrayList<>();
+    private final ArrayList<schedule> CustomListViewValuesArrSchedules = new ArrayList<>();
     private int PROGRAM;
     private int YEAR;
     private int SUBLEVEL;
 
     private final String SERVER_HOST = "http://192.168.1.69:5000/api/v1";
+    private final String SERVER_GROUPS = SERVER_HOST + "/groups";
+    private final String SERVER_PROGRAMS = SERVER_HOST + "/programs";
+    private final String SERVER_DURATION = SERVER_HOST + "/duration";
+    private final String SERVER_SCHEDULES = SERVER_HOST + "/schedule";
+    private final String SERVER_ALL = SERVER_HOST + "/all";
 
     private int[] prog_id;
     private int[] programs_id = new int[5];
@@ -113,14 +119,11 @@ public class MainActivity extends AppCompatActivity
     private boolean showSearch = false;
 
     private MenuItem addCalendar = null;
-    private MenuItem searchItem = null;
 
     public boolean ListSelectionInProgress = false;
     private long startD;
     private long endD;
     public String lastProgramName;
-
-    SearchAdapter adaptersearch;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -201,13 +204,13 @@ public class MainActivity extends AppCompatActivity
                 SearchView.OnQueryTextListener queryTextListener = new SearchView.OnQueryTextListener() {
                     @Override
                     public boolean onQueryTextChange(String newText) {
-                        adaptersearch.getFilter().filter(newText);
+                        adapterschedules.getFilter().filter(newText);
                         return true;
                     }
 
                     @Override
                     public boolean onQueryTextSubmit(String query) {
-                        adaptersearch.getFilter().filter(query);
+                        adapterschedules.getFilter().filter(query);
                         return true;
                     }
                 };
@@ -249,7 +252,6 @@ public class MainActivity extends AppCompatActivity
         queue = Volley.newRequestQueue(this);
         queue.getCache().clear();
 
-        String SERVER_GROUPS = SERVER_HOST + "/groups";
         sr = new StringRequest(Request.Method.POST, SERVER_GROUPS, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
@@ -262,7 +264,7 @@ public class MainActivity extends AppCompatActivity
 
                     for (int i = 0; i < responseJson.length(); i++) {
 
-                        final ListModelGroups sched = new ListModelGroups();
+                        final group sched = new group();
                         JSONObject responseObject = responseJson.getJSONObject(i);
 
                         groups_id[i] = responseObject.getInt("id");
@@ -281,20 +283,7 @@ public class MainActivity extends AppCompatActivity
                     Resources res = getResources();
                     CustomListView = MainActivity.this;
 
-                    /*
-                    // TO DO - Makni u buducnosti nakon sto se sve sredi
-                    if (programid == 1 && year == 4) // fix za izborne predmete na 3. i 4. godini - abecedni red
-                            {
-                                Collections.sort(CustomListViewValuesArr, new Comparator<ListModelGroups>() {
-                            @Override
-                            public int compare(ListModelGroups lhs, ListModelGroups rhs) {
-                                return lhs.getGroupName().compareToIgnoreCase(rhs.getGroupName());
-                            }
-                        });
-                    }
-                    */
-
-                    adapter = new GroupsAdapter(CustomListView, CustomListViewValuesArr, res);
+                    adapter = new hr.efzg.pculina.efzgraspored.adapters.groups(CustomListView, CustomListViewValuesArr, res);
 
                     if (CustomListViewValuesArr.size() > 0) {
                         list.setAdapter(adapter);
@@ -350,7 +339,7 @@ public class MainActivity extends AppCompatActivity
             queue.add(sr);
         } else {
             list = findViewById(R.id.listViewCustom);
-            adapter = new GroupsAdapter(CustomListView, CustomListViewValuesArr, getResources());
+            adapter = new hr.efzg.pculina.efzgraspored.adapters.groups(CustomListView, CustomListViewValuesArr, getResources());
             list.setAdapter(adapter);
             hideLoading();
         }
@@ -388,7 +377,7 @@ public class MainActivity extends AppCompatActivity
         list.setAdapter(null);
 
         while (c.moveToNext()) {
-            final ListModelSchedules sched = new ListModelSchedules();
+            final schedule sched = new schedule();
 
             sched.setDay(c.getInt(c.getColumnIndex("day")));
             sched.setUnitsInDay(c.getInt(c.getColumnIndex("units_in_day")));
@@ -409,9 +398,9 @@ public class MainActivity extends AppCompatActivity
         }
         c.close();
 
-        Collections.sort(CustomListViewValuesArrSchedules, new Comparator<ListModelSchedules>() {
+        Collections.sort(CustomListViewValuesArrSchedules, new Comparator<schedule>() {
             @Override
-            public int compare(ListModelSchedules lhs, ListModelSchedules rhs) {
+            public int compare(schedule lhs, schedule rhs) {
                 int result = Integer.compare(lhs.getDay(), rhs.getDay());
                 if (result == 0) {
                     result = Integer.compare(lhs.getUnitsInDay(), rhs.getUnitsInDay());
@@ -421,7 +410,7 @@ public class MainActivity extends AppCompatActivity
         });
 
         CustomListView = MainActivity.this;
-        adapterschedules = new SchedulesAdapter(CustomListView, CustomListViewValuesArrSchedules, getResources());
+        adapterschedules = new schedules(CustomListView, CustomListViewValuesArrSchedules, getResources());
 
         if (c.getCount() > 0) {
             list.setAdapter(adapterschedules);
@@ -518,7 +507,7 @@ public class MainActivity extends AppCompatActivity
     @SuppressWarnings("WeakerAccess")
     private void loadMenuItems() {
         RequestQueue queue = Volley.newRequestQueue(this);
-        String SERVER_PROGRAMS = SERVER_HOST + "/programs";
+
         StringRequest sr = new StringRequest(Request.Method.POST, SERVER_PROGRAMS, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
@@ -844,18 +833,18 @@ public class MainActivity extends AppCompatActivity
 
     private void removeFromSchedule(int pos) {
         SQLiteDatabase db = openOrCreateDatabase("MyScheduleDB", MODE_PRIVATE, null);
-        ListModelSchedules b = CustomListViewValuesArrSchedules.get((Integer) list.getItemAtPosition(pos));
+        schedule b = CustomListViewValuesArrSchedules.get((Integer) list.getItemAtPosition(pos));
         db.delete("Classes", "day" + "=" + b.getDay() + " and " + "units_in_day" + "=" + String.valueOf(b.getUnitsInDay()) + " and " + "course_name" + "='" + b.getCourseName() + "'", null);
         db.close();
     }
 
-    private void addToSchedule(int pos, int type) { //type 0 ListModelSchedules | type 1 ListModelSearch
+    private void addToSchedule(int pos, int type) { //type 0 schedule | type 1 ListModelSearch
 
         int day, units_in_day, duration, room_id, group_id, execution_type;
         String period, course_name, tutor_name, tutor_surname, tutor_code, room_name, group_name;
 
         if (type == 0) {
-            ListModelSchedules a = CustomListViewValuesArrSchedules.get((Integer) list.getItemAtPosition(pos));
+            schedule a = CustomListViewValuesArrSchedules.get((Integer) list.getItemAtPosition(pos));
 
             day = a.getDay();
             units_in_day = a.getUnitsInDay();
@@ -872,7 +861,7 @@ public class MainActivity extends AppCompatActivity
             room_name = a.getRoomName();
             group_name = a.getGroupName();
         } else {
-            ListModelSearch a = adaptersearch.getItemF(pos);
+            schedule a = adapterschedules.getItemF(pos);
 
             day = a.getDay();
             units_in_day = a.getUnitsInDay();
@@ -926,7 +915,7 @@ public class MainActivity extends AppCompatActivity
 
     private void loadDuration() {
         RequestQueue queue = Volley.newRequestQueue(this);
-        String SERVER_DURATION = SERVER_HOST + "/duration";
+
         StringRequest sr = new StringRequest(Request.Method.POST, SERVER_DURATION, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
@@ -966,7 +955,7 @@ public class MainActivity extends AppCompatActivity
 
 
         RequestQueue queue = Volley.newRequestQueue(this);
-        String SERVER_SCHEDULES = SERVER_HOST + "/schedule";
+
         StringRequest sr = new StringRequest(Request.Method.POST, SERVER_SCHEDULES, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
@@ -990,7 +979,7 @@ public class MainActivity extends AppCompatActivity
                     group_name = new String[responseJson.length()];
 
                     for (int i = 0; i < responseJson.length(); i++) {
-                        final ListModelSchedules sched = new ListModelSchedules();
+                        final schedule sched = new schedule();
 
                         JSONObject responseObject = responseJson.getJSONObject(i);
 
@@ -1045,9 +1034,9 @@ public class MainActivity extends AppCompatActivity
                     CustomListView = MainActivity.this;
                     list = findViewById(R.id.listViewCustom);
 
-                    Collections.sort(CustomListViewValuesArrSchedules, new Comparator<ListModelSchedules>() {
+                    Collections.sort(CustomListViewValuesArrSchedules, new Comparator<schedule>() {
                         @Override
-                        public int compare(ListModelSchedules lhs, ListModelSchedules rhs) {
+                        public int compare(schedule lhs, schedule rhs) {
                             int result = Integer.compare(lhs.getDay(), rhs.getDay());
                             if (result == 0) {
                                 result = Integer.compare(lhs.getUnitsInDay(), rhs.getUnitsInDay());
@@ -1056,7 +1045,7 @@ public class MainActivity extends AppCompatActivity
                         }
                     });
 
-                    adapterschedules = new SchedulesAdapter(CustomListView, CustomListViewValuesArrSchedules, res);
+                    adapterschedules = new schedules(CustomListView, CustomListViewValuesArrSchedules, res);
                     list.setAdapter(adapterschedules);
 
                     hideLoading();
@@ -1405,14 +1394,14 @@ public class MainActivity extends AppCompatActivity
 
     public void loadAllSchedules() {
         SUBLEVEL = 6;
-        CustomSearchValues.clear();
+        CustomListViewValuesArrSchedules.clear();
 
         list = findViewById(R.id.listViewCustom);
         list.setAdapter(null);
 
 
         RequestQueue queue = Volley.newRequestQueue(this);
-        String SERVER_ALL = SERVER_HOST + "/all";
+
         StringRequest sr = new StringRequest(Request.Method.POST, SERVER_ALL, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
@@ -1436,7 +1425,7 @@ public class MainActivity extends AppCompatActivity
                     group_name = new String[responseJson.length()];
 
                     for (int i = 0; i < responseJson.length(); i++) {
-                        final ListModelSearch sched = new ListModelSearch();
+                        final schedule sched = new schedule();
 
                         JSONObject responseObject = responseJson.getJSONObject(i);
 
@@ -1484,17 +1473,17 @@ public class MainActivity extends AppCompatActivity
                             sched.setGroupName("null");
                         }
 
-                        CustomSearchValues.add(sched);
+                        CustomListViewValuesArrSchedules.add(sched);
                     }
 
                     Resources res = getResources();
                     CustomListView = MainActivity.this;
                     list = findViewById(R.id.listViewCustom);
 
-                    Collections.sort(CustomSearchValues, new Comparator<ListModelSearch>() {
+                    Collections.sort(CustomListViewValuesArrSchedules, new Comparator<schedule>() {
 
                         @Override
-                        public int compare(ListModelSearch lhs, ListModelSearch rhs) {
+                        public int compare(schedule lhs, schedule rhs) {
                             int result = Integer.compare(lhs.getDay(), rhs.getDay());
                             if (result == 0) {
                                 result = Integer.compare(lhs.getUnitsInDay(), rhs.getUnitsInDay());
@@ -1503,8 +1492,8 @@ public class MainActivity extends AppCompatActivity
                         }
                     });
 
-                    adaptersearch = new SearchAdapter(CustomListView, CustomSearchValues, res);
-                    list.setAdapter(adaptersearch);
+                    adapterschedules = new schedules(CustomListView, CustomListViewValuesArrSchedules, res);
+                    list.setAdapter(adapterschedules);
 
                     hideLoading();
                 } catch (Exception e) {
