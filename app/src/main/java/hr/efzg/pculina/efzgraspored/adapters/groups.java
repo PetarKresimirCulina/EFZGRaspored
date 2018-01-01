@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.res.Resources;
 import android.database.DataSetObserver;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -124,9 +123,7 @@ public class groups extends BaseAdapter {
 
             final int gid = tempValues.getID();
             final String name = tempValues.getGroupName();
-            Log.d("position", String.valueOf(position));
-            Log.d("gid", String.valueOf(gid));
-            Log.d("grname", name);
+
             vi.setOnClickListener(new View.OnClickListener() {
 
                 @Override

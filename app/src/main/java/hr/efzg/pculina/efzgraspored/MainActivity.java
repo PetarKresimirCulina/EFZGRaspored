@@ -92,7 +92,7 @@ public class MainActivity extends AppCompatActivity
     private int YEAR;
     private int SUBLEVEL;
 
-    private final String SERVER_HOST = "http://192.168.1.69:5000/api/v1";
+    private final String SERVER_HOST = "http://192.168.1.229/api/v1";
     private final String SERVER_GROUPS = SERVER_HOST + "/groups";
     private final String SERVER_PROGRAMS = SERVER_HOST + "/programs";
     private final String SERVER_DURATION = SERVER_HOST + "/duration";
@@ -1045,8 +1045,12 @@ public class MainActivity extends AppCompatActivity
                         }
                     });
 
-                    adapterschedules = new schedules(CustomListView, CustomListViewValuesArrSchedules, res);
-                    list.setAdapter(adapterschedules);
+                    if (CustomListViewValuesArrSchedules.size() > 0) {
+                        adapterschedules = new schedules(CustomListView, CustomListViewValuesArrSchedules, res);
+                        list.setAdapter(adapterschedules);
+                    } else {
+                        list.setAdapter(null);
+                    }
 
                     hideLoading();
                 } catch (Exception e) {
